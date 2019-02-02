@@ -1,0 +1,17 @@
+<bin file="analyze_bbwwMEM_dilepton.cc" name="analyze_bbwwMEM_dilepton">
+  <use   name="FWCore/FWLite"/>
+  <use   name="FWCore/ParameterSet"/>
+  <use   name="FWCore/PythonParameterSet"/>
+  <use   name="FWCore/Utilities"/>
+  <use   name="DataFormats/FWLite"/>
+  <use   name="DataFormats/Math"/>
+  <use   name="PhysicsTools/FWLite"/>
+  <use   name="tthAnalysis/HiggsToTauTau"/>
+  <use   name="hhAnalysis/bbww"/>
+  <use   name="hhAnalysis/bbwwMEM"/>
+  <use   name="hhAnalysis/bbwwMEMPerformanceStudies"/>
+  <use   name="root"/>
+  <use   name="roottmva"/>
+  <use   name="boost"/>
+  <Flags CXXFLAGS="-g -Wshadow -Werror"/>
+</bin>
