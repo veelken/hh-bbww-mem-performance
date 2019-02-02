@@ -463,15 +463,15 @@ int main(int argc, char* argv[])
 //--- apply pT and eta cuts to generator-level leptons and b-jets,
 //    clean collection of generator-level b-jets with respect to leptons
     std::vector<const GenLepton*> genLeptonsForMatching_ptrs = convert_to_ptrs(genLeptonsForMatching);
-    std::vector<const GenLepton*> selGenLeptons = genLeptonSelector(genLeptonsForMatching_ptrs, isHigherPt_GenLepton);
+    std::vector<const GenLepton*> selGenLeptons = genLeptonSelector(genLeptonsForMatching_ptrs, isHigherPt_GenLepton_ptr);
 
     std::vector<const GenJet*> genBJetsForMatching_ptrs = convert_to_ptrs(genBJetsForMatching);
     std::vector<const GenJet*> cleanedGenBJets = genJetCleaner(genBJetsForMatching_ptrs, genLeptonsForMatching_ptrs);
-    std::vector<const GenJet*> selGenBJets = genJetSelector(cleanedGenBJets, isHigherPt_GenJet);
+    std::vector<const GenJet*> selGenBJets = genJetSelector(cleanedGenBJets, isHigherPt_GenJet_ptr);
 
     std::vector<const GenJet*> genJets_ptrs = convert_to_ptrs(genJets);
     std::vector<const GenJet*> cleanedGenJets = genJetCleaner(genJets_ptrs, genLeptonsForMatching_ptrs, genBJetsForMatching_ptrs);
-    std::vector<const GenJet*> selGenJets = genJetSelector(cleanedGenJets, isHigherPt_GenJet);
+    std::vector<const GenJet*> selGenJets = genJetSelector(cleanedGenJets, isHigherPt_GenJet_ptr);
 
     GenMEt genMEt(genMEtPx, genMEtPy);
 
