@@ -1,6 +1,12 @@
 import FWCore.ParameterSet.Config as cms
 import os
 
+#--------------------------------------------------------------------------------
+# CV: imports needed by analyzeConfig.py base-class
+from tthAnalysis.HiggsToTauTau.configs.recommendedMEtFilters_cfi import *
+from tthAnalysis.HiggsToTauTau.configs.EvtYieldHistManager_cfi import *
+#--------------------------------------------------------------------------------
+
 process = cms.PSet()
 
 process.fwliteInput = cms.PSet(
@@ -13,7 +19,7 @@ process.fwliteOutput = cms.PSet(
     fileName = cms.string('')
 )
 
-process.analyze_bbwwMEM_dilepton = cms.PSet(
+process.analyze_hh_bbwwMEM_dilepton = cms.PSet(
     treeName = cms.string('Events'),
 
     maxSelEvents = cms.int32(1000),

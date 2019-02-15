@@ -1,4 +1,4 @@
-<bin file="analyze_bbwwMEM_dilepton.cc" name="analyze_bbwwMEM_dilepton">
+<bin file="analyze_hh_bbwwMEM_dilepton.cc" name="analyze_hh_bbwwMEM_dilepton">
   <use   name="FWCore/FWLite"/>
   <use   name="FWCore/ParameterSet"/>
   <use   name="FWCore/PythonParameterSet"/>

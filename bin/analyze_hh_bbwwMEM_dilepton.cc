@@ -77,25 +77,25 @@ int main(int argc, char* argv[])
     return EXIT_FAILURE;
   }
 
-  std::cout << "<analyze_bbwwMEM_dilepton>:" << std::endl;
+  std::cout << "<analyze_hh_bbwwMEM_dilepton>:" << std::endl;
 
 //--- keep track of time it takes the macro to execute
   TBenchmark clock;
-  clock.Start("analyze_bbwwMEM_dilepton");
+  clock.Start("analyze_hh_bbwwMEM_dilepton");
 
 //--- read python configuration parameters
   if ( !edm::readPSetsFrom(argv[1])->existsAs<edm::ParameterSet>("process") )
-    throw cms::Exception("analyze_bbwwMEM_dilepton")
+    throw cms::Exception("analyze_hh_bbwwMEM_dilepton")
       << "No ParameterSet 'process' found in configuration file = " << argv[1] << " !!\n";
 
   edm::ParameterSet cfg = edm::readPSetsFrom(argv[1])->getParameter<edm::ParameterSet>("process");
 
-  edm::ParameterSet cfg_analyze = cfg.getParameter<edm::ParameterSet>("analyze_bbwwMEM_dilepton");
+  edm::ParameterSet cfg_analyze = cfg.getParameter<edm::ParameterSet>("analyze_hh_bbwwMEM_dilepton");
 
   std::string treeName = cfg_analyze.getParameter<std::string>("treeName");
 
   std::string process_string = cfg_analyze.getParameter<std::string>("process");
-  bool isSignal = ( process_string == "signal" ) ? true : false;
+  bool isSignal = ( process_string.find("signal") != std::string::npos ) ? true : false;
 
   std::string histogramDir = cfg_analyze.getParameter<std::string>("histogramDir");
   
@@ -159,6 +159,8 @@ int main(int argc, char* argv[])
   fwlite::InputSource inputFiles(cfg);
   int maxEvents = inputFiles.maxEvents();
   std::cout << " maxEvents = " << maxEvents << std::endl;
+  int skipSelEvents = cfg_analyze.getParameter<int>("skipSelEvents");
+  std::cout << " skipSelEvents = " << skipSelEvents << std::endl;
   int maxSelEvents = cfg_analyze.getParameter<int>("maxSelEvents");
   std::cout << " maxSelEvents = " << maxSelEvents << std::endl;
   unsigned reportEvery = inputFiles.reportAfter();
@@ -282,6 +284,7 @@ int main(int argc, char* argv[])
   selHistManager->weights_->bookHistograms(fs, { "genWeight", "pileupWeight" });
 
   int analyzedEntries = 0;
+  int skippedEntries = 0;
   int selectedEntries = 0;
   double selectedEntries_weighted = 0.;
   TH1* histogram_analyzedEntries = fs.make<TH1D>("analyzedEntries", "analyzedEntries", 1, -0.5, +0.5);
@@ -485,6 +488,7 @@ int main(int argc, char* argv[])
       const GenJet* genJet = nullptr;
       bool genJet_isFake;
       double u = rnd.Uniform();
+      assert(u >= 0. && u <= 1.);
       if ( u > prob_fake ) {
 	genJet = selGenBJet;
         genJet_isFake = false;
@@ -590,7 +594,14 @@ int main(int argc, char* argv[])
     cutFlowHistManager->fillHistograms("m(ll) > 12 GeV", evtWeight);
     
     //---------------------------------------------------------------------------
-    // CV: compute matrix element method (MEM) likelihood ratio of HH signal and ttbar background hypotheses
+    // CV: Skip running matrix element method (MEM) computation for the first 'skipSelEvents' events.
+    //     This feature allows to process the HH signal samples in chunks of 'maxSelEvents' events per job.
+    ++skippedEntries;
+    if ( skippedEntries < skipSelEvents ) continue;
+    //---------------------------------------------------------------------------
+
+    //---------------------------------------------------------------------------
+    // CV: Compute MEM likelihood ratio of HH signal and ttbar background hypotheses
 
     std::cout << "selGenLepton_lead: pT = " << selGenLepton_lead->pt() << ", eta = " << selGenLepton_lead->eta() << ", phi = " << selGenLepton_lead->phi() << std::endl;
     std::cout << "selGenLepton_sublead: pT = " << selGenLepton_sublead->pt() << ", eta = " << selGenLepton_sublead->eta() << ", phi = " << selGenLepton_sublead->phi() << std::endl;
@@ -640,7 +651,16 @@ int main(int argc, char* argv[])
     std::vector<mem::MeasuredParticle> memMeasuredParticles_missingBJet;
     memMeasuredParticles_missingBJet.push_back(memMeasuredLepton_lead);
     memMeasuredParticles_missingBJet.push_back(memMeasuredLepton_sublead);
-    memMeasuredParticles_missingBJet.push_back(memMeasuredBJet_lead);
+    bool selGenBJet_isFake_missingBJet;
+    double u = rnd.Uniform();
+    assert(u >= 0. && u <= 1.);
+    if ( u > 0.50 ) {
+      memMeasuredParticles_missingBJet.push_back(memMeasuredBJet_lead);
+      selGenBJet_isFake_missingBJet = selGenBJet_lead_isFake;
+    } else {
+      memMeasuredParticles_missingBJet.push_back(memMeasuredBJet_sublead);
+      selGenBJet_isFake_missingBJet = selGenBJet_sublead_isFake;
+    }
 
     const double sqrtS = 13.e+3;
     const std::string pdfName = "MSTW2008lo68cl";
@@ -696,7 +716,7 @@ int main(int argc, char* argv[])
 	      << " (CPU time = " << memCpuTime_missingBJet << ")" << std::endl;
     //---------------------------------------------------------------------------
 
-    if ( selGenBJet_lead_isFake && selGenBJet_lead_isFake ) {
+    if ( selGenBJet_lead_isFake && selGenBJet_sublead_isFake ) {
       selHistManager->mem_fakeLeadingBJet_fakeSubleadingBJet_->fillHistograms(memResult, memCpuTime, evtWeight);
     } else if ( selGenBJet_lead_isFake ) {
       selHistManager->mem_fakeLeadingBJet_genuineSubleadingBJet_->fillHistograms(memResult, memCpuTime, evtWeight);
@@ -705,7 +725,7 @@ int main(int argc, char* argv[])
     } else {
       selHistManager->mem_genuineLeadingBJet_genuineSubleadingBJet_->fillHistograms(memResult, memCpuTime, evtWeight);
     }
-    if ( selGenBJet_lead_isFake ) {
+    if ( selGenBJet_isFake_missingBJet ) {
       selHistManager->mem_missingBJet_fakeBJet_->fillHistograms(memResult_missingBJet, memCpuTime_missingBJet, evtWeight);
     } else {
       selHistManager->mem_missingBJet_genuineBJet_->fillHistograms(memResult_missingBJet, memCpuTime_missingBJet, evtWeight);
@@ -747,7 +767,7 @@ int main(int argc, char* argv[])
 
   delete inputTree;
 
-  clock.Show("analyze_bbwwMEM_dilepton");
+  clock.Show("analyze_hh_bbwwMEM_dilepton");
 
   return EXIT_SUCCESS;
 }
