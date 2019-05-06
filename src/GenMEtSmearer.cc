@@ -1,8 +1,8 @@
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/GenMEtSmearer.h"
 
 GenMEtSmearer::GenMEtSmearer()
-  : sigmaX_(20.)
-  , sigmaY_(20.)
+  : sigmaX_(10.)
+  , sigmaY_(10.)
 {
   rnd_.SetSeed(0);
 }
