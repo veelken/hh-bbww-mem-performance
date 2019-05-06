@@ -73,8 +73,8 @@ void showHistograms(double canvasSizeX, double canvasSizeY,
 		    TH1* histogram2, const std::string& legendEntry2,
 		    TH1* histogram3, const std::string& legendEntry3,
 		    TH1* histogram4, const std::string& legendEntry4,
-		    int colors[], int markerStyles[], int markerSizes[], int lineStyles[], int lineWidths[],
-		    double legendTextSize, double legendPosX, double legendPosY, double legendSizeX, double legendSizeY, 
+		    int colors[], int markerStyles[], int markerSizes[], int lineStyles[], int lineWidths[], const std::vector<std::string>& drawOptions,
+		    double legendTextSize, double legendPosX, double legendPosY, double legendSizeX, double legendSizeY, const std::vector<std::string>& legendOptions, 
 		    const std::string& labelText, double labelTextSize,
 		    double labelPosX, double labelPosY, double labelSizeX, double labelSizeY,
 		    int numBinsX, double xMin, double xMax, const std::string& xAxisTitle, double xAxisOffset,
@@ -183,21 +183,24 @@ void showHistograms(double canvasSizeX, double canvasSizeY,
   histogram1_rebinned->SetTitle("");
   histogram1_rebinned->SetStats(false);
 
-  histogram1_rebinned->Draw("hist");
-  histogram2_rebinned->Draw("epsame");
-  if ( histogram3_rebinned ) histogram3_rebinned->Draw("histsame");
-  if ( histogram4_rebinned ) histogram4_rebinned->Draw("epsame");
+  histogram1_rebinned->Draw(Form("%ssame", drawOptions[0].data()));
+  histogram2_rebinned->Draw(Form("%ssame", drawOptions[1].data()));
+  if ( histogram3_rebinned ) histogram3_rebinned->Draw(Form("%ssame", drawOptions[2].data()));
+  if ( histogram4_rebinned ) histogram4_rebinned->Draw(Form("%ssame", drawOptions[3].data()));
   histogram1_rebinned->Draw("axissame");
 
-  TPaveText* label = new TPaveText(labelPosX, labelPosY, labelPosX + labelSizeX, labelPosY + labelSizeY, "NDC");
-  label->SetFillStyle(0);
-  label->SetBorderSize(0);
-  label->AddText(labelText.data());
-  label->SetTextFont(42);
-  label->SetTextSize(labelTextSize);
-  label->SetTextColor(1);
-  label->SetTextAlign(13);
-  label->Draw();
+  TPaveText* label = nullptr;
+  if ( labelText != "" ) {
+    label = new TPaveText(labelPosX, labelPosY, labelPosX + labelSizeX, labelPosY + labelSizeY, "NDC");
+    label->SetFillStyle(0);
+    label->SetBorderSize(0);
+    label->AddText(labelText.data());
+    label->SetTextFont(42);
+    label->SetTextSize(labelTextSize);
+    label->SetTextColor(1);
+    label->SetTextAlign(13);
+    label->Draw();
+  }
 
   TLegend* legend = new TLegend(legendPosX, legendPosY, legendPosX + legendSizeX, legendPosY + legendSizeY, NULL, "brNDC");
   legend->SetFillColor(10);
@@ -207,10 +210,10 @@ void showHistograms(double canvasSizeX, double canvasSizeY,
   legend->SetTextSize(legendTextSize);
   legend->SetTextColor(1);
   legend->SetMargin(0.20);
-  legend->AddEntry(histogram1_rebinned, legendEntry1.data(), "l");
-  legend->AddEntry(histogram2_rebinned, legendEntry2.data(), "p");
-  if ( histogram3 ) legend->AddEntry(histogram3_rebinned, legendEntry3.data(), "l");
-  if ( histogram4 ) legend->AddEntry(histogram4_rebinned, legendEntry4.data(), "p");
+  legend->AddEntry(histogram1_rebinned, legendEntry1.data(), legendOptions[0].data());
+  legend->AddEntry(histogram2_rebinned, legendEntry2.data(), legendOptions[1].data());
+  if ( histogram3 ) legend->AddEntry(histogram3_rebinned, legendEntry3.data(), legendOptions[2].data());
+  if ( histogram4 ) legend->AddEntry(histogram4_rebinned, legendEntry4.data(), legendOptions[3].data());
   legend->Draw();
 
   canvas->Update();
@@ -220,8 +223,8 @@ void showHistograms(double canvasSizeX, double canvasSizeY,
   outputFileName_plot.append(std::string(outputFileName, 0, idx));
   //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
   canvas->Print(std::string(outputFileName_plot).append(".png").data());
-  //canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
-  //canvas->Print(std::string(outputFileName_plot).append(".root").data());
+  canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
+  canvas->Print(std::string(outputFileName_plot).append(".root").data());
 
   delete label;
   delete legend;
@@ -286,8 +289,8 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
 			   TH1* histogram2, const std::string& legendEntry2,
 			   TH1* histogram3, const std::string& legendEntry3,
 			   TH1* histogram4, const std::string& legendEntry4,
-			   int colors[], int markerStyles[], int markerSizes[], int lineStyles[], int lineWidths[],
-			   double legendTextSize, double legendPosX, double legendPosY, double legendSizeX, double legendSizeY, 
+			   int colors[], int markerStyles[], int markerSizes[], int lineStyles[], int lineWidths[], const std::vector<std::string>& drawOptions,
+			   double legendTextSize, double legendPosX, double legendPosY, double legendSizeX, double legendSizeY, const std::vector<std::string>& legendOptions, 
 			   const std::string& labelText, double labelTextSize,
 			   double labelPosX, double labelPosY, double labelSizeX, double labelSizeY,
 			   int numBinsX, double xMin, double xMax, const std::string& xAxisTitle, double xAxisOffset,
@@ -426,21 +429,24 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
   histogramRef_rebinned->SetTitle("");
   histogramRef_rebinned->SetStats(false);
 
-  histogramRef_rebinned->Draw("hist");
-  histogram2_rebinned->Draw("epsame");
-  if ( histogram3_rebinned ) histogram3_rebinned->Draw("histsame");
-  if ( histogram4_rebinned ) histogram4_rebinned->Draw("epsame");
+  histogramRef_rebinned->Draw(drawOptions[0].data());
+  histogram2_rebinned->Draw(Form("%ssame", drawOptions[1].data()));
+  if ( histogram3_rebinned ) histogram3_rebinned->Draw(Form("%ssame", drawOptions[2].data()));
+  if ( histogram4_rebinned ) histogram4_rebinned->Draw(Form("%ssame", drawOptions[3].data()));
   histogramRef_rebinned->Draw("axissame");
 
-  TPaveText* label = new TPaveText(labelPosX, labelPosY, labelPosX + labelSizeX, labelPosY + labelSizeY, "NDC");
-  label->SetFillStyle(0);
-  label->SetBorderSize(0);
-  label->AddText(labelText.data());
-  label->SetTextFont(42);
-  label->SetTextSize(labelTextSize);
-  label->SetTextColor(1);
-  label->SetTextAlign(13);
-  label->Draw();
+  TPaveText* label = nullptr;
+  if ( labelText != "" ) {
+    label = new TPaveText(labelPosX, labelPosY, labelPosX + labelSizeX, labelPosY + labelSizeY, "NDC");
+    label->SetFillStyle(0);
+    label->SetBorderSize(0);
+    label->AddText(labelText.data());
+    label->SetTextFont(42);
+    label->SetTextSize(labelTextSize);
+    label->SetTextColor(1);
+    label->SetTextAlign(13);
+    label->Draw();
+  }
 
   TLegend* legend = new TLegend(legendPosX, legendPosY, legendPosX + legendSizeX, legendPosY + legendSizeY, NULL, "brNDC");
   legend->SetFillColor(10);
@@ -450,10 +456,10 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
   legend->SetTextSize(legendTextSize);
   legend->SetTextColor(1);
   legend->SetMargin(0.20);
-  legend->AddEntry(histogramRef_rebinned, legendEntryRef.data(), "l");
-  legend->AddEntry(histogram2_rebinned, legendEntry2.data(), "p");
-  if ( histogram3 ) legend->AddEntry(histogram3_rebinned, legendEntry3.data(), "l");
-  if ( histogram4 ) legend->AddEntry(histogram4_rebinned, legendEntry4.data(), "p");
+  legend->AddEntry(histogramRef_rebinned, legendEntryRef.data(), legendOptions[0].data());
+  legend->AddEntry(histogram2_rebinned, legendEntry2.data(), legendOptions[1].data());
+  if ( histogram3 ) legend->AddEntry(histogram3_rebinned, legendEntry3.data(), legendOptions[2].data());
+  if ( histogram4 ) legend->AddEntry(histogram4_rebinned, legendEntry4.data(), legendOptions[3].data());
   legend->Draw();
 
   canvas->cd();
@@ -519,9 +525,9 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
   histogramRatio2_rebinned->SetMinimum(yMin_ratio);
   histogramRatio2_rebinned->SetMaximum(yMax_ratio);
 
-  histogramRatio2_rebinned->Draw("ep");
-  if ( histogramRatio3_rebinned ) histogramRatio3_rebinned->Draw("histsame");
-  if ( histogramRatio4_rebinned ) histogramRatio4_rebinned->Draw("epsame");
+  histogramRatio2_rebinned->Draw(drawOptions[1].data());
+  if ( histogramRatio3_rebinned ) histogramRatio3_rebinned->Draw(Form("%ssame", drawOptions[2].data()));
+  if ( histogramRatio4_rebinned ) histogramRatio4_rebinned->Draw(Form("%ssame", drawOptions[3].data()));
   histogramRatio2_rebinned->Draw("axissame");
 
   canvas->Update();
@@ -531,8 +537,8 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
   outputFileName_plot.append(std::string(outputFileName, 0, idx));
   //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
   canvas->Print(std::string(outputFileName_plot).append(".png").data());
-  //canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
-  //canvas->Print(std::string(outputFileName_plot).append(".root").data());
+  canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
+  canvas->Print(std::string(outputFileName_plot).append(".root").data());
 
   delete label;
   delete legend;
@@ -644,8 +650,8 @@ void showGraphs(double canvasSizeX, double canvasSizeY,
 		TGraph* graph2, const std::string& legendEntry2,
 		TGraph* graph3, const std::string& legendEntry3,
 		TGraph* graph4, const std::string& legendEntry4,
-		int colors[], int markerStyles[], int markerSizes[], int lineStyles[], int lineWidths[],
-		double legendTextSize, double legendPosX, double legendPosY, double legendSizeX, double legendSizeY, 
+		int colors[], int markerStyles[], int markerSizes[], int lineStyles[], int lineWidths[], const std::vector<std::string>& drawOptions,
+		double legendTextSize, double legendPosX, double legendPosY, double legendSizeX, double legendSizeY, const std::vector<std::string>& legendOptions,
 		const std::string& labelText, double labelTextSize,
 		double labelPosX, double labelPosY, double labelSizeX, double labelSizeY,
 		int numBinsX, double xMin, double xMax, const std::string& xAxisTitle, double xAxisOffset,
@@ -673,14 +679,16 @@ void showGraphs(double canvasSizeX, double canvasSizeY,
   graph1_sparsified->SetMarkerStyle(markerStyles[0]);
   graph1_sparsified->SetMarkerSize(markerSizes[0]);
 
-  assert(graph2);
-  TGraph* graph2_sparsified = sparsifyGraph(graph2);
-  graph2_sparsified->SetLineColor(colors[1]);
-  graph2_sparsified->SetLineStyle(lineStyles[1]);
-  graph2_sparsified->SetLineWidth(lineWidths[1]);
-  graph2_sparsified->SetMarkerColor(colors[1]);
-  graph2_sparsified->SetMarkerStyle(markerStyles[1]);
-  graph2_sparsified->SetMarkerSize(markerSizes[1]);
+  TGraph* graph2_sparsified = nullptr;
+  if ( graph2 ) {    
+    graph2_sparsified = sparsifyGraph(graph2);
+    graph2_sparsified->SetLineColor(colors[1]);
+    graph2_sparsified->SetLineStyle(lineStyles[1]);
+    graph2_sparsified->SetLineWidth(lineWidths[1]);
+    graph2_sparsified->SetMarkerColor(colors[1]);
+    graph2_sparsified->SetMarkerStyle(markerStyles[1]);
+    graph2_sparsified->SetMarkerSize(markerSizes[1]);
+  }
   
   TGraph* graph3_sparsified = nullptr;
   if ( graph3 ) {    
@@ -734,35 +742,41 @@ void showGraphs(double canvasSizeX, double canvasSizeY,
   yAxis->SetNdivisions(505);
   
   dummyHistogram->Draw("axis");
-  graph1_sparsified->Draw("Lp");
-  graph2_sparsified->Draw("Lp");
-  if ( graph3_sparsified ) graph3_sparsified->Draw("Lp");
-  if ( graph4_sparsified ) graph4_sparsified->Draw("Lp");
+  graph1_sparsified->Draw(drawOptions[0].data());
+  if ( graph2_sparsified ) graph2_sparsified->Draw(drawOptions[1].data());
+  if ( graph3_sparsified ) graph3_sparsified->Draw(drawOptions[2].data());
+  if ( graph4_sparsified ) graph4_sparsified->Draw(drawOptions[3].data());
   dummyHistogram->Draw("axissame");
 
-  TPaveText* label = new TPaveText(labelPosX, labelPosY, labelPosX + labelSizeX, labelPosY + labelSizeY, "NDC");
-  label->SetFillStyle(0);
-  label->SetBorderSize(0);
-  label->AddText(labelText.data());
-  label->SetTextFont(42);
-  label->SetTextSize(labelTextSize);
-  label->SetTextColor(1);
-  label->SetTextAlign(13);
-  label->Draw();
+  TPaveText* label = nullptr;
+  if ( labelText != "" ) {
+    label = new TPaveText(labelPosX, labelPosY, labelPosX + labelSizeX, labelPosY + labelSizeY, "NDC");
+    label->SetFillStyle(0);
+    label->SetBorderSize(0);
+    label->AddText(labelText.data());
+    label->SetTextFont(42);
+    label->SetTextSize(labelTextSize);
+    label->SetTextColor(1);
+    label->SetTextAlign(13);
+    label->Draw();
+  }
 
-  TLegend* legend = new TLegend(legendPosX, legendPosY, legendPosX + legendSizeX, legendPosY + legendSizeY, NULL, "brNDC");
-  legend->SetFillColor(10);
-  legend->SetFillStyle(0);
-  legend->SetBorderSize(0);
-  legend->SetTextFont(42);
-  legend->SetTextSize(legendTextSize);
-  legend->SetTextColor(1);
-  legend->SetMargin(0.20);
-  legend->AddEntry(graph1_sparsified, legendEntry1.data(), "lp");
-  legend->AddEntry(graph2_sparsified, legendEntry2.data(), "lp");
-  if ( graph3_sparsified ) legend->AddEntry(graph3_sparsified, legendEntry3.data(), "lp");
-  if ( graph4_sparsified ) legend->AddEntry(graph4_sparsified, legendEntry4.data(), "lp");
-  legend->Draw();
+  TLegend* legend = nullptr;
+  if ( graph2_sparsified || graph3_sparsified || graph4_sparsified ) {
+    legend = new TLegend(legendPosX, legendPosY, legendPosX + legendSizeX, legendPosY + legendSizeY, NULL, "brNDC");
+    legend->SetFillColor(10);
+    legend->SetFillStyle(0);
+    legend->SetBorderSize(0);
+    legend->SetTextFont(42);
+    legend->SetTextSize(legendTextSize);
+    legend->SetTextColor(1);
+    legend->SetMargin(0.20);
+    legend->AddEntry(graph1_sparsified, legendEntry1.data(), legendOptions[0].data());
+    if ( graph2_sparsified ) legend->AddEntry(graph2_sparsified, legendEntry2.data(), legendOptions[1].data());
+    if ( graph3_sparsified ) legend->AddEntry(graph3_sparsified, legendEntry3.data(), legendOptions[2].data());
+    if ( graph4_sparsified ) legend->AddEntry(graph4_sparsified, legendEntry4.data(), legendOptions[3].data());
+    legend->Draw();
+  }
 
   canvas->Update();
 
@@ -771,8 +785,8 @@ void showGraphs(double canvasSizeX, double canvasSizeY,
   outputFileName_plot.append(std::string(outputFileName, 0, idx));
   //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
   canvas->Print(std::string(outputFileName_plot).append(".png").data());
-  //canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
-  //canvas->Print(std::string(outputFileName_plot).append(".root").data());
+  canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
+  canvas->Print(std::string(outputFileName_plot).append(".root").data());
 
   delete label;
   delete legend;
@@ -821,8 +835,8 @@ void showGraphs_wRatio(double canvasSizeX, double canvasSizeY,
 		       TGraph* graph2, const std::string& legendEntry2,
 		       TGraph* graph3, const std::string& legendEntry3,
 		       TGraph* graph4, const std::string& legendEntry4,
-		       int colors[], int markerStyles[], int markerSizes[], int lineStyles[], int lineWidths[],
-		       double legendTextSize, double legendPosX, double legendPosY, double legendSizeX, double legendSizeY, 
+		       int colors[], int markerStyles[], int markerSizes[], int lineStyles[], int lineWidths[], const std::vector<std::string>& drawOptions,
+		       double legendTextSize, double legendPosX, double legendPosY, double legendSizeX, double legendSizeY, const std::vector<std::string>& legendOptions, 
 		       const std::string& labelText, double labelTextSize,
 		       double labelPosX, double labelPosY, double labelSizeX, double labelSizeY,
 		       int numBinsX, double xMin, double xMax, const std::string& xAxisTitle, double xAxisOffset,
@@ -941,21 +955,24 @@ void showGraphs_wRatio(double canvasSizeX, double canvasSizeY,
   yAxis_top->SetNdivisions(505);
   
   dummyHistogram_top->Draw("axis");
-  graphRef_sparsified->Draw("Lp");
-  graph2_sparsified->Draw("Lp");
-  if ( graph3_sparsified ) graph3_sparsified->Draw("Lp");
-  if ( graph4_sparsified ) graph4_sparsified->Draw("Lp");
+  graphRef_sparsified->Draw(drawOptions[0].data());
+  graph2_sparsified->Draw(drawOptions[1].data());
+  if ( graph3_sparsified ) graph3_sparsified->Draw(drawOptions[2].data());
+  if ( graph4_sparsified ) graph4_sparsified->Draw(drawOptions[3].data());
   dummyHistogram_top->Draw("axissame");
 
-  TPaveText* label = new TPaveText(labelPosX, labelPosY, labelPosX + labelSizeX, labelPosY + labelSizeY, "NDC");
-  label->SetFillStyle(0);
-  label->SetBorderSize(0);
-  label->AddText(labelText.data());
-  label->SetTextFont(42);
-  label->SetTextSize(labelTextSize);
-  label->SetTextColor(1);
-  label->SetTextAlign(13);
-  label->Draw();
+  TPaveText* label = nullptr;
+  if ( labelText != "" ) {
+    label = new TPaveText(labelPosX, labelPosY, labelPosX + labelSizeX, labelPosY + labelSizeY, "NDC");
+    label->SetFillStyle(0);
+    label->SetBorderSize(0);
+    label->AddText(labelText.data());
+    label->SetTextFont(42);
+    label->SetTextSize(labelTextSize);
+    label->SetTextColor(1);
+    label->SetTextAlign(13);
+    label->Draw();
+  }
 
   TLegend* legend = new TLegend(legendPosX, legendPosY, legendPosX + legendSizeX, legendPosY + legendSizeY, NULL, "brNDC");
   legend->SetFillColor(10);
@@ -965,10 +982,10 @@ void showGraphs_wRatio(double canvasSizeX, double canvasSizeY,
   legend->SetTextSize(legendTextSize);
   legend->SetTextColor(1);
   legend->SetMargin(0.20);
-  legend->AddEntry(graphRef_sparsified, legendEntryRef.data(), "lp");
-  legend->AddEntry(graph2_sparsified, legendEntry2.data(), "lp");
-  if ( graph3_sparsified ) legend->AddEntry(graph3_sparsified, legendEntry3.data(), "lp");
-  if ( graph4_sparsified ) legend->AddEntry(graph4_sparsified, legendEntry4.data(), "lp");
+  legend->AddEntry(graphRef_sparsified, legendEntryRef.data(), legendOptions[0].data());
+  legend->AddEntry(graph2_sparsified, legendEntry2.data(), legendOptions[1].data());
+  if ( graph3_sparsified ) legend->AddEntry(graph3_sparsified, legendEntry3.data(), legendOptions[2].data());
+  if ( graph4_sparsified ) legend->AddEntry(graph4_sparsified, legendEntry4.data(), legendOptions[3].data());
   legend->Draw();
 
   canvas->cd();
@@ -1036,9 +1053,9 @@ void showGraphs_wRatio(double canvasSizeX, double canvasSizeY,
   dummyHistogram_bottom->SetMaximum(yMax_ratio);
 
   dummyHistogram_bottom->Draw("axis");
-  graphRatio2_sparsified->Draw("Lp");
-  if ( graphRatio3_sparsified ) graphRatio3_sparsified->Draw("Lp");
-  if ( graphRatio4_sparsified ) graphRatio4_sparsified->Draw("Lp");
+  graphRatio2_sparsified->Draw(drawOptions[1].data());
+  if ( graphRatio3_sparsified ) graphRatio3_sparsified->Draw(drawOptions[2].data());
+  if ( graphRatio4_sparsified ) graphRatio4_sparsified->Draw(drawOptions[3].data());
   dummyHistogram_bottom->Draw("axissame");
 
   canvas->Update();
@@ -1048,8 +1065,8 @@ void showGraphs_wRatio(double canvasSizeX, double canvasSizeY,
   outputFileName_plot.append(std::string(outputFileName, 0, idx));
   //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
   canvas->Print(std::string(outputFileName_plot).append(".png").data());
-  //canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
-  //canvas->Print(std::string(outputFileName_plot).append(".root").data());
+  canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
+  canvas->Print(std::string(outputFileName_plot).append(".root").data());
 
   delete label;
   delete legend;
@@ -1071,10 +1088,12 @@ void makeMEMPerformancePlots_bbww_dilepton()
 
   TH1::AddDirectory(false);
 
+  bool makePlots_signal_vs_background = true;
   bool makePlots_effectOfFakes = true;
   bool makePlots_effectOfSmearing = true;
 
-  std::string inputFilePath = "/hdfs/local/veelken/hhAnalysis/2017/2019Feb06/histograms/hh_bbwwMEM_dilepton/";
+  //std::string inputFilePath = "/hdfs/local/veelken/hhAnalysis/2017/2019Feb16/histograms/hh_bbwwMEM_dilepton/";
+  std::string inputFilePath = "/hdfs/local/veelken/hhAnalysis/2017/2019Mar09/histograms/hh_bbwwMEM_dilepton/";
   std::string inputFileName = "histograms_harvested_stage2_hh_bbwwMEM_dilepton.root";
   TString inputFileName_full = inputFilePath.data();
   if ( !inputFileName_full.EndsWith("/") ) inputFileName_full.Append("/");
@@ -1122,6 +1141,16 @@ void makeMEMPerformancePlots_bbww_dilepton()
   int showHistograms_markerSizes[4]  = { 2, 2, 2, 2 };
   int showHistograms_lineStyles[4]   = { 1, 1, 7, 1 };
   int showHistograms_lineWidths[4]   = { 3, 2, 3, 2 };
+  std::vector<std::string> showHistograms_drawOptions = { "hist", "ep", "hist", "ep" };
+  std::vector<std::string> showHistograms_legendOptions = { "l", "p", "l", "p" };
+
+  int showHistograms_signal_vs_background_colors[2]       = { kBlack, kRed };
+  int showHistograms_signal_vs_background_markerStyles[2] = { 20, 24 };
+  int showHistograms_signal_vs_background_markerSizes[2]  = { 2, 2 };
+  int showHistograms_signal_vs_background_lineStyles[2]   = { 1, 1 };
+  int showHistograms_signal_vs_background_lineWidths[2]   = { 2, 2 };
+  std::vector<std::string> showHistograms_signal_vs_background_drawOptions = { "ep", "ep" };
+  std::vector<std::string> showHistograms_signal_vs_background_legendOptions = { "p", "p" };
 
   int numBinsX_memLR = 40;
   double xMin_memLR = 0.;
@@ -1156,7 +1185,91 @@ void makeMEMPerformancePlots_bbww_dilepton()
   int showGraphs_markerSizes[4]  = { 2, 2, 2, 2 };
   int showGraphs_lineStyles[4]   = { 1, 1, 1, 1 };
   int showGraphs_lineWidths[4]   = { 2, 2, 2, 2 };
-  
+  std::vector<std::string> showGraphs_drawOptions = { "Lp", "Lp", "Lp", "Lp" };
+  std::vector<std::string> showGraphs_legendOptions = { "lp", "lp", "lp", "lp" };
+
+  if ( makePlots_signal_vs_background ) {
+    //-------------------------------------------------------------------------------------------------
+    TH1* histogram_probS_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[false][false], kSignal, histogramNames[kProbSignal]);
+    TH1* histogram_probS_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[false][false], kBackground, histogramNames[kProbSignal]);
+
+    showHistograms(
+      showHistograms_canvasSizeX, showHistograms_canvasSizeY,
+      histogram_probS_noSmearing_2genuineBJets_signal, "Signal",
+      histogram_probS_noSmearing_2genuineBJets_background, "Background",
+      nullptr, "",
+      nullptr, "",
+      showHistograms_signal_vs_background_colors, showHistograms_signal_vs_background_markerStyles, showHistograms_signal_vs_background_markerSizes, 
+      showHistograms_signal_vs_background_lineStyles, showHistograms_signal_vs_background_lineWidths, showHistograms_drawOptions,
+      0.055, 0.25, 0.75, 0.33, 0.15, showHistograms_signal_vs_background_legendOptions,
+      "", 0.055,
+      0.1800, 0.9525, 0.2900, 0.0900,
+      numBinsX_probS, xMin_probS, xMax_probS, "w_{0}", showHistograms_xAxisOffset,
+      true, yMin_probS, yMax_probS, "dN/dw_{0}", showHistograms_yAxisOffset, 
+      "hh_bbwwMEM_dilepton_signal_vs_background_probS_unsmeared.pdf");
+
+    TH1* histogram_probB_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[false][false], kSignal, histogramNames[kProbBackground]);
+    TH1* histogram_probB_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[false][false], kBackground, histogramNames[kProbBackground]);
+
+    showHistograms(
+      showHistograms_canvasSizeX, showHistograms_canvasSizeY,
+      histogram_probB_noSmearing_2genuineBJets_signal, "Signal",
+      histogram_probB_noSmearing_2genuineBJets_background, "Background",
+      nullptr, "",
+      nullptr, "",
+      showHistograms_signal_vs_background_colors, showHistograms_signal_vs_background_markerStyles, showHistograms_signal_vs_background_markerSizes, 
+      showHistograms_signal_vs_background_lineStyles, showHistograms_signal_vs_background_lineWidths, showHistograms_drawOptions,
+      0.055, 0.25, 0.75, 0.33, 0.15, showHistograms_signal_vs_background_legendOptions,
+      "", 0.055,
+      0.1800, 0.9525, 0.2900, 0.0900,
+      numBinsX_probB, xMin_probB, xMax_probB, "w_{1}", showHistograms_xAxisOffset,
+      true, yMin_probB, yMax_probB, "dN/dw_{1}", showHistograms_yAxisOffset, 
+      "hh_bbwwMEM_dilepton_signal_vs_background_probB_unsmeared.pdf");
+
+    TH1* histogram_memLR_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[false][false], kSignal, histogramNames[kLR]);
+    TH1* histogram_memLR_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[false][false], kBackground, histogramNames[kLR]);
+
+    showHistograms(
+      showHistograms_canvasSizeX, showHistograms_canvasSizeY,
+      histogram_memLR_noSmearing_2genuineBJets_signal, "Signal",
+      histogram_memLR_noSmearing_2genuineBJets_background, "Background",
+      nullptr, "",
+      nullptr, "",
+      showHistograms_signal_vs_background_colors, showHistograms_signal_vs_background_markerStyles, showHistograms_signal_vs_background_markerSizes, 
+      showHistograms_signal_vs_background_lineStyles, showHistograms_signal_vs_background_lineWidths, showHistograms_drawOptions,
+      0.055, 0.25, 0.75, 0.33, 0.15, showHistograms_signal_vs_background_legendOptions,
+      "", 0.055,
+      0.1800, 0.9525, 0.2900, 0.0900,
+      numBinsX_memLR, xMin_memLR, xMax_memLR, "P", showHistograms_xAxisOffset,
+      true, yMin_memLR, yMax_memLR, "dN/dP", showHistograms_yAxisOffset,
+      "hh_bbwwMEM_dilepton_signal_vs_background_memLR_unsmeared.pdf");
+
+    TGraph* graph_ROC_noSmearing_2genuineBJets_logScale = compGraphROC("graph_ROC_noSmearing_2genuineBJets",
+      histogram_memLR_noSmearing_2genuineBJets_signal, histogram_memLR_noSmearing_2genuineBJets_background, true);
+
+    showGraphs(
+      showGraphs_canvasSizeX, showGraphs_canvasSizeY,
+      graph_ROC_noSmearing_2genuineBJets_logScale, "",
+      nullptr, "",
+      nullptr, "",
+      nullptr, "",
+      showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, 
+      showGraphs_lineStyles, showGraphs_lineWidths, showGraphs_drawOptions,
+      0.055, 0.21, 0.76, 0.33, 0.15, showGraphs_legendOptions,
+      labelText_signal_vs_background, 0.040,
+      0.1600, 0.9525, 0.2900, 0.0600,
+      10, 0., 1.01, "Signal Efficiency", showGraphs_xAxisOffset,
+      true, 2.1e-4, 9.9e0, "Background Rate", showGraphs_yAxisOffset, 
+      "hh_bbwwMEM_dilepton_ROC_unsmeared.pdf");
+    //-------------------------------------------------------------------------------------------------
+  }
+
   if ( makePlots_effectOfFakes ) {
     //-------------------------------------------------------------------------------------------------
     TH1* histogram_probS_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
@@ -1179,8 +1292,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
       histogram_probS_noSmearing_1fakeBJet_signal, "#geq 1 fake b-jet",
       nullptr, "",
       nullptr, "",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.055, 0.25, 0.75, 0.33, 0.15,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.055, 0.25, 0.75, 0.33, 0.15, showHistograms_legendOptions,
       labelText_signal, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_probS, xMin_probS, xMax_probS, "w_{0}", showHistograms_xAxisOffset,
@@ -1192,8 +1306,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
       histogram_probS_noSmearing_fakeLeadBJet_signal, "fake lead. b-jet",
       histogram_probS_noSmearing_fakeSubleadBJet_signal, "fake sublead. b-jet",
       histogram_probS_noSmearing_2fakeBJets_signal, "2 fake b-jets",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.045, 0.25, 0.69, 0.28, 0.23,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.045, 0.25, 0.69, 0.28, 0.23, showHistograms_legendOptions,
       labelText_signal, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_probS, xMin_probS, xMax_probS, "w_{0}", showHistograms_xAxisOffset,
@@ -1211,12 +1326,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
       histogram_probS_missingBJet_noSmearing_fakeBJet_signal, "fake b-jet",
       nullptr, "",
       nullptr, "",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.055, 0.25, 0.75, 0.33, 0.15,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.055, 0.25, 0.75, 0.33, 0.15, showHistograms_legendOptions,
       labelText_signal, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
-      numBinsX_probS, xMin_probS, xMax_probS, "w_{0}", showHistograms_xAxisOffset,
-      true, yMin_probS, yMax_probS, "dN/dw_{0}", showHistograms_yAxisOffset,
+      numBinsX_probS, xMin_probS, xMax_probS, "w_{0}^{m}", showHistograms_xAxisOffset,
+      true, yMin_probS, yMax_probS, "dN/dw_{0}^{m}", showHistograms_yAxisOffset,
       "hh_bbwwMEM_dilepton_effectOfFakes_probS_missingBJet_signal.pdf");
     
     TH1* histogram_probB_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
@@ -1239,8 +1355,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
       histogram_probB_noSmearing_1fakeBJet_signal, "#geq 1 fake b-jet",
       nullptr, "",
       nullptr, "",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.055, 0.25, 0.75, 0.33, 0.15,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.055, 0.25, 0.75, 0.33, 0.15, showHistograms_legendOptions,
       labelText_signal, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_probB, xMin_probB, xMax_probB, "w_{1}", showHistograms_xAxisOffset,
@@ -1252,8 +1369,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
       histogram_probB_noSmearing_fakeLeadBJet_signal, "fake lead. b-jet",
       histogram_probB_noSmearing_fakeSubleadBJet_signal, "fake sublead. b-jet",
       histogram_probB_noSmearing_2fakeBJets_signal, "2 fake b-jets",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.045, 0.25, 0.69, 0.28, 0.23,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.045, 0.25, 0.69, 0.28, 0.23, showHistograms_legendOptions,
       labelText_signal, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_probB, xMin_probB, xMax_probB, "w_{1}",showHistograms_xAxisOffset,
@@ -1271,38 +1389,40 @@ void makeMEMPerformancePlots_bbww_dilepton()
       histogram_probB_missingBJet_noSmearing_fakeBJet_signal, "fake b-jet",
       nullptr, "",
       nullptr, "",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.055, 0.25, 0.75, 0.33, 0.15,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.055, 0.25, 0.75, 0.33, 0.15, showHistograms_legendOptions,
       labelText_signal, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
-      numBinsX_probB, xMin_probB, xMax_probB, "w_{1}",showHistograms_xAxisOffset,
-      true, yMin_probB, yMax_probB, "dN/dw_{1}", showHistograms_yAxisOffset,
+      numBinsX_probB, xMin_probB, xMax_probB, "w_{1}^{m}",showHistograms_xAxisOffset,
+      true, yMin_probB, yMax_probB, "dN/dw_{1}^{m}", showHistograms_yAxisOffset,
       "hh_bbwwMEM_dilepton_effectOfFakes_probB_missingBJet_signal.pdf");
     //-------------------------------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------------------------------
-    TH1* histogram_ProbS_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
+    TH1* histogram_probS_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
       directories_part1[false][false], directories_part2[false][false], kBackground, histogramNames[kProbSignal]);
-    TH1* histogram_ProbS_noSmearing_fakeLeadBJet_background = loadHistogram(inputFile, 
+    TH1* histogram_probS_noSmearing_fakeLeadBJet_background = loadHistogram(inputFile, 
       directories_part1[false][false], directories_part2[true][false], kBackground, histogramNames[kProbSignal]);
-    TH1* histogram_ProbS_noSmearing_fakeSubleadBJet_background = loadHistogram(inputFile, 
+    TH1* histogram_probS_noSmearing_fakeSubleadBJet_background = loadHistogram(inputFile, 
       directories_part1[false][false], directories_part2[false][true], kBackground, histogramNames[kProbSignal]);
-    TH1* histogram_ProbS_noSmearing_2fakeBJets_background = loadHistogram(inputFile, 
+    TH1* histogram_probS_noSmearing_2fakeBJets_background = loadHistogram(inputFile, 
       directories_part1[false][false], directories_part2[true][true], kBackground, histogramNames[kProbSignal]);
   
-    TH1* histogram_ProbS_noSmearing_1fakeBJet_background = addHistograms("histogram_ProbS_noSmearing_1fakeBJet_background",
-      histogram_ProbS_noSmearing_fakeLeadBJet_background, 
-      histogram_ProbS_noSmearing_fakeSubleadBJet_background, 
-      histogram_ProbS_noSmearing_2fakeBJets_background);
+    TH1* histogram_probS_noSmearing_1fakeBJet_background = addHistograms("histogram_probS_noSmearing_1fakeBJet_background",
+      histogram_probS_noSmearing_fakeLeadBJet_background, 
+      histogram_probS_noSmearing_fakeSubleadBJet_background, 
+      histogram_probS_noSmearing_2fakeBJets_background);
 
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
-      histogram_ProbS_noSmearing_2genuineBJets_background, "2 genuine b-jets",
-      histogram_ProbS_noSmearing_1fakeBJet_background, "#geq 1 fake b-jet",
+      histogram_probS_noSmearing_2genuineBJets_background, "2 genuine b-jets",
+      histogram_probS_noSmearing_1fakeBJet_background, "#geq 1 fake b-jet",
       nullptr, "",
       nullptr, "",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.055, 0.25, 0.75, 0.33, 0.15,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.055, 0.25, 0.75, 0.33, 0.15, showHistograms_legendOptions,
       labelText_background, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_probS, xMin_probS, xMax_probS, "w_{0}", showHistograms_xAxisOffset,
@@ -1310,12 +1430,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
       "hh_bbwwMEM_dilepton_effectOfFakes_2histograms_probS_background.pdf");
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
-      histogram_ProbS_noSmearing_2genuineBJets_background, "2 genuine b-jets",
-      histogram_ProbS_noSmearing_fakeLeadBJet_background, "fake lead. b-jet",
-      histogram_ProbS_noSmearing_fakeSubleadBJet_background, "fake sublead. b-jet",
-      histogram_ProbS_noSmearing_2fakeBJets_background, "2 fake b-jets",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.045, 0.25, 0.69, 0.28, 0.23,
+      histogram_probS_noSmearing_2genuineBJets_background, "2 genuine b-jets",
+      histogram_probS_noSmearing_fakeLeadBJet_background, "fake lead. b-jet",
+      histogram_probS_noSmearing_fakeSubleadBJet_background, "fake sublead. b-jet",
+      histogram_probS_noSmearing_2fakeBJets_background, "2 fake b-jets",
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.045, 0.25, 0.69, 0.28, 0.23, showHistograms_legendOptions,
       labelText_background, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_probS, xMin_probS, xMax_probS, "w_{0}", showHistograms_xAxisOffset,
@@ -1333,12 +1454,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
       histogram_probS_missingBJet_noSmearing_fakeBJet_background, "fake b-jet",
       nullptr, "",
       nullptr, "",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.055, 0.25, 0.75, 0.33, 0.15,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.055, 0.25, 0.75, 0.33, 0.15, showHistograms_legendOptions,
       labelText_background, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
-      numBinsX_probS, xMin_probS, xMax_probS, "w_{0}", showHistograms_xAxisOffset,
-      true, yMin_probS, yMax_probS, "dN/dw_{0}", showHistograms_yAxisOffset,
+      numBinsX_probS, xMin_probS, xMax_probS, "w_{0}^{m}", showHistograms_xAxisOffset,
+      true, yMin_probS, yMax_probS, "dN/dw_{0}^{m}", showHistograms_yAxisOffset,
       "hh_bbwwMEM_dilepton_effectOfFakes_probS_missingBJet_background.pdf");
 
     TH1* histogram_probB_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
@@ -1361,8 +1483,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
       histogram_probB_noSmearing_1fakeBJet_background, "#geq 1 fake b-jet",
       nullptr, "",
       nullptr, "",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.055, 0.25, 0.75, 0.33, 0.15,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.055, 0.25, 0.75, 0.33, 0.15, showHistograms_legendOptions,
       labelText_background, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_probB, xMin_probB, xMax_probB, "w_{1}",showHistograms_xAxisOffset,
@@ -1374,8 +1497,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
       histogram_probB_noSmearing_fakeLeadBJet_background, "fake lead. b-jet",
       histogram_probB_noSmearing_fakeSubleadBJet_background, "fake sublead. b-jet",
       histogram_probB_noSmearing_2fakeBJets_background, "2 fake b-jets",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.045, 0.25, 0.69, 0.28, 0.23,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.045, 0.25, 0.69, 0.28, 0.23, showHistograms_legendOptions,
       labelText_background, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_probB, xMin_probB, xMax_probB, "w_{1}",showHistograms_xAxisOffset,
@@ -1393,12 +1517,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
       histogram_probB_missingBJet_noSmearing_fakeBJet_background, "fake b-jet",
       nullptr, "",
       nullptr, "",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.055, 0.25, 0.75, 0.33, 0.15,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.055, 0.25, 0.75, 0.33, 0.15, showHistograms_legendOptions,
       labelText_background, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
-      numBinsX_probB, xMin_probB, xMax_probB, "w_{1}",showHistograms_xAxisOffset,
-      true, yMin_probB, yMax_probB, "dN/dw_{1}", showHistograms_yAxisOffset,
+      numBinsX_probB, xMin_probB, xMax_probB, "w_{1}^{m}",showHistograms_xAxisOffset,
+      true, yMin_probB, yMax_probB, "dN/dw_{1}^{m}", showHistograms_yAxisOffset,
       "hh_bbwwMEM_dilepton_effectOfFakes_probB_missingBJet_background.pdf");
     //-------------------------------------------------------------------------------------------------
   
@@ -1423,8 +1548,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
       histogram_memLR_noSmearing_1fakeBJet_signal, "#geq 1 fake b-jet",
       nullptr, "",
       nullptr, "",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.055, 0.40, 0.75, 0.33, 0.15,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.055, 0.40, 0.75, 0.33, 0.15, showHistograms_legendOptions,
       labelText_signal, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_memLR, xMin_memLR, xMax_memLR, "P", showHistograms_xAxisOffset,
@@ -1436,8 +1562,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
       histogram_memLR_noSmearing_fakeLeadBJet_signal, "fake lead. b-jet",
       histogram_memLR_noSmearing_fakeSubleadBJet_signal, "fake sublead. b-jet",
       histogram_memLR_noSmearing_2fakeBJets_signal, "2 fake b-jets",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.045, 0.40, 0.69, 0.28, 0.23,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.045, 0.40, 0.69, 0.28, 0.23, showHistograms_legendOptions,
       labelText_signal, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_memLR, xMin_memLR, xMax_memLR, "P", showHistograms_xAxisOffset,
@@ -1464,8 +1591,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
       histogram_memLR_noSmearing_1fakeBJet_background, "#geq 1 fake b-jet",
       nullptr, "",
       nullptr, "",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.055, 0.40, 0.75, 0.33, 0.15,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.055, 0.40, 0.75, 0.33, 0.15, showHistograms_legendOptions,
       labelText_background, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_memLR, xMin_memLR, xMax_memLR, "P", showHistograms_xAxisOffset,
@@ -1477,8 +1605,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
       histogram_memLR_noSmearing_fakeLeadBJet_background, "fake lead. b-jet",
       histogram_memLR_noSmearing_fakeSubleadBJet_background, "fake sublead. b-jet",
       histogram_memLR_noSmearing_2fakeBJets_background, "2 fake b-jets",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.045, 0.40, 0.69, 0.28, 0.23,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.045, 0.40, 0.69, 0.28, 0.23, showHistograms_legendOptions,
       labelText_background, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_memLR, xMin_memLR, xMax_memLR, "P", showHistograms_xAxisOffset,
@@ -1503,8 +1632,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
       graph_ROC_noSmearing_1fakeBJet_logScale, "#geq 1 fake b-jet",
       nullptr, "",
       nullptr, "",
-      showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, showGraphs_lineStyles, showGraphs_lineWidths,
-      0.055, 0.21, 0.76, 0.33, 0.15,
+      showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, 
+      showGraphs_lineStyles, showGraphs_lineWidths, showGraphs_drawOptions,
+      0.055, 0.21, 0.76, 0.33, 0.15, showGraphs_legendOptions,
       labelText_signal_vs_background, 0.040,
       0.1600, 0.9525, 0.2900, 0.0600,
       10, 0., 1.01, "Signal Efficiency", showGraphs_xAxisOffset,
@@ -1516,8 +1646,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
       graph_ROC_noSmearing_fakeLeadBJet_logScale, "fake lead. b-jet",
       graph_ROC_noSmearing_fakeSubleadBJet_logScale, "fake sublead. b-jet",
       graph_ROC_noSmearing_2fakeBJets_logScale, "2 fake b-jets",
-      showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, showGraphs_lineStyles, showGraphs_lineWidths,
-      0.045, 0.25, 0.69, 0.28, 0.23,
+      showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, 
+      showGraphs_lineStyles, showGraphs_lineWidths, showGraphs_drawOptions,
+      0.045, 0.25, 0.69, 0.28, 0.23, showGraphs_legendOptions,
       labelText_signal_vs_background, 0.040,
       0.1600, 0.9525, 0.2900, 0.0600,
       10, 0., 1.01, "Signal Efficiency", showGraphs_xAxisOffset,
@@ -1535,12 +1666,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
       histogram_memLR_missingBJet_noSmearing_fakeBJet_signal, "fake b-jet",
       nullptr, "",
       nullptr, "",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.055, 0.40, 0.75, 0.33, 0.15,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.055, 0.40, 0.75, 0.33, 0.15, showHistograms_legendOptions,
       labelText_signal, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
-      numBinsX_memLR, xMin_memLR, xMax_memLR, "P", showHistograms_xAxisOffset,
-      true, yMin_memLR, yMax_memLR, "dN/dP", showHistograms_yAxisOffset,
+      numBinsX_memLR, xMin_memLR, xMax_memLR, "P_{m}", showHistograms_xAxisOffset,
+      true, yMin_memLR, yMax_memLR, "dN/dP_{m}", showHistograms_yAxisOffset,
       "hh_bbwwMEM_dilepton_effectOfFakes_memLR_missingBJet_signal.pdf");
 
     TH1* histogram_memLR_missingBJet_noSmearing_genuineBJet_background = loadHistogram(inputFile, 
@@ -1554,12 +1686,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
       histogram_memLR_missingBJet_noSmearing_fakeBJet_background, "fake b-jet",
       nullptr, "",
       nullptr, "",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.055, 0.40, 0.75, 0.33, 0.15,
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.055, 0.40, 0.75, 0.33, 0.15, showHistograms_legendOptions,
       labelText_background, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
-      numBinsX_memLR, xMin_memLR, xMax_memLR, "P", showHistograms_xAxisOffset,
-      true, yMin_memLR, yMax_memLR, "dN/dP", showHistograms_yAxisOffset,
+      numBinsX_memLR, xMin_memLR, xMax_memLR, "P_{m}", showHistograms_xAxisOffset,
+      true, yMin_memLR, yMax_memLR, "dN/dP_{m}", showHistograms_yAxisOffset,
       "hh_bbwwMEM_dilepton_effectOfFakes_memLR_missingBJet_background.pdf");
 
     TGraph* graph_ROC_missingBJet_noSmearing_genuineBJet_logScale = compGraphROC("graph_ROC_missingBJet_noSmearing_genuineBJet",
@@ -1573,8 +1706,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
       graph_ROC_missingBJet_noSmearing_fakeBJet_logScale, "fake b-jet",
       nullptr, "",
       nullptr, "",
-      showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, showGraphs_lineStyles, showGraphs_lineWidths,
-      0.055, 0.21, 0.76, 0.33, 0.15,
+      showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, 
+      showGraphs_lineStyles, showGraphs_lineWidths, showGraphs_drawOptions,
+      0.055, 0.21, 0.76, 0.33, 0.15, showGraphs_legendOptions,
       labelText_signal_vs_background, 0.040,
       0.1600, 0.9525, 0.2900, 0.0600,
       10, 0., 1.01, "Signal Efficiency", showGraphs_xAxisOffset,
@@ -1597,11 +1731,12 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
       histogram_probS_noSmearing_2genuineBJets_signal, "MC truth",
-      histogram_probS_jetSmearing_2genuineBJets_signal, "Jet smearing",
-      histogram_probS_metSmearing_2genuineBJets_signal, "MET smearing",
-      histogram_probS_jet_and_metSmearing_2genuineBJets_signal, "Jet+MET smearing",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.054, 0.25, 0.63, 0.34, 0.28,
+      histogram_probS_jetSmearing_2genuineBJets_signal, "E_{b} smearing",
+      histogram_probS_metSmearing_2genuineBJets_signal, "#rho smearing",
+      histogram_probS_jet_and_metSmearing_2genuineBJets_signal, "E_{b} + #rho smearing",
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.054, 0.25, 0.63, 0.34, 0.28, showHistograms_legendOptions,
       labelText_signal, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_probS, xMin_probS, xMax_probS, "w_{0}", showHistograms_xAxisOffset_wRatio,
@@ -1620,15 +1755,16 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
       histogram_probS_missingBJet_noSmearing_genuineBJet_signal, "MC truth",
-      histogram_probS_missingBJet_jetSmearing_genuineBJet_signal, "Jet smearing",
-      histogram_probS_missingBJet_metSmearing_genuineBJet_signal, "MET smearing",
-      histogram_probS_missingBJet_jet_and_metSmearing_genuineBJet_signal, "Jet+MET smearing",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.054, 0.25, 0.63, 0.34, 0.28,
+      histogram_probS_missingBJet_jetSmearing_genuineBJet_signal, "E_{b} smearing",
+      histogram_probS_missingBJet_metSmearing_genuineBJet_signal, "#rho smearing",
+      histogram_probS_missingBJet_jet_and_metSmearing_genuineBJet_signal, "E_{b} + #rho smearing",
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.054, 0.25, 0.63, 0.34, 0.28, showHistograms_legendOptions,
       labelText_signal, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
-      numBinsX_probS, xMin_probS, xMax_probS, "w_{0}", showHistograms_xAxisOffset_wRatio,
-      true, yMin_probS_wRatio, yMax_probS, -0.29, +0.29, "dN/dw_{0}", showHistograms_yAxisOffset_wRatio,
+      numBinsX_probS, xMin_probS, xMax_probS, "w_{0}^{m}", showHistograms_xAxisOffset_wRatio,
+      true, yMin_probS_wRatio, yMax_probS, -0.29, +0.29, "dN/dw_{0}^{m}", showHistograms_yAxisOffset_wRatio,
       "hh_bbwwMEM_dilepton_effectOfSmearing_probS_missingBJet_signal.pdf");
 
     TH1* histogram_probB_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
@@ -1643,11 +1779,12 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
       histogram_probB_noSmearing_2genuineBJets_signal, "MC truth",
-      histogram_probB_jetSmearing_2genuineBJets_signal, "Jet smearing",
-      histogram_probB_metSmearing_2genuineBJets_signal, "MET smearing",
-      histogram_probB_jet_and_metSmearing_2genuineBJets_signal, "Jet+MET smearing",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.054, 0.25, 0.63, 0.34, 0.28,
+      histogram_probB_jetSmearing_2genuineBJets_signal, "E_{b} smearing",
+      histogram_probB_metSmearing_2genuineBJets_signal, "#rho smearing",
+      histogram_probB_jet_and_metSmearing_2genuineBJets_signal, "E_{b} + #rho smearing",
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.054, 0.25, 0.63, 0.34, 0.28, showHistograms_legendOptions,
       labelText_signal, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_probB, xMin_probB, xMax_probB, "w_{1}",showHistograms_xAxisOffset_wRatio,
@@ -1666,15 +1803,16 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
       histogram_probB_missingBJet_noSmearing_genuineBJet_signal, "MC truth",
-      histogram_probB_missingBJet_jetSmearing_genuineBJet_signal, "Jet smearing",
-      histogram_probB_missingBJet_metSmearing_genuineBJet_signal, "MET smearing",
-      histogram_probB_missingBJet_jet_and_metSmearing_genuineBJet_signal, "Jet+MET smearing",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.054, 0.25, 0.63, 0.34, 0.28,
+      histogram_probB_missingBJet_jetSmearing_genuineBJet_signal, "E_{b} smearing",
+      histogram_probB_missingBJet_metSmearing_genuineBJet_signal, "#rho smearing",
+      histogram_probB_missingBJet_jet_and_metSmearing_genuineBJet_signal, "E_{b} + #rho smearing",
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.054, 0.25, 0.63, 0.34, 0.28, showHistograms_legendOptions,
       labelText_signal, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
-      numBinsX_probB, xMin_probB, xMax_probB, "w_{1}",showHistograms_xAxisOffset_wRatio,
-      true, yMin_probB_wRatio, yMax_probB, -0.29, +0.29, "dN/dw_{1}", showHistograms_yAxisOffset_wRatio,
+      numBinsX_probB, xMin_probB, xMax_probB, "w_{1}^{m}",showHistograms_xAxisOffset_wRatio,
+      true, yMin_probB_wRatio, yMax_probB, -0.29, +0.29, "dN/dw_{1}^{m}", showHistograms_yAxisOffset_wRatio,
       "hh_bbwwMEM_dilepton_effectOfSmearing_probB_missingBJet_signal.pdf");
     //-------------------------------------------------------------------------------------------------
 
@@ -1691,11 +1829,12 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
       histogram_probS_noSmearing_2genuineBJets_background, "MC truth",
-      histogram_probS_jetSmearing_2genuineBJets_background, "Jet smearing",
-      histogram_probS_metSmearing_2genuineBJets_background, "MET smearing",
-      histogram_probS_jet_and_metSmearing_2genuineBJets_background, "Jet+MET smearing",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.054, 0.25, 0.63, 0.34, 0.28,
+      histogram_probS_jetSmearing_2genuineBJets_background, "E_{b} smearing",
+      histogram_probS_metSmearing_2genuineBJets_background, "#rho smearing",
+      histogram_probS_jet_and_metSmearing_2genuineBJets_background, "E_{b} + #rho smearing",
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.054, 0.25, 0.63, 0.34, 0.28, showHistograms_legendOptions,
       labelText_background, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_probS, xMin_probS, xMax_probS, "w_{0}", showHistograms_xAxisOffset_wRatio,
@@ -1714,15 +1853,16 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
       histogram_probS_missingBJet_noSmearing_genuineBJet_background, "MC truth",
-      histogram_probS_missingBJet_jetSmearing_genuineBJet_background, "Jet smearing",
-      histogram_probS_missingBJet_metSmearing_genuineBJet_background, "MET smearing",
-      histogram_probS_missingBJet_jet_and_metSmearing_genuineBJet_background, "Jet+MET smearing",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.054, 0.25, 0.63, 0.34, 0.28,
+      histogram_probS_missingBJet_jetSmearing_genuineBJet_background, "E_{b} smearing",
+      histogram_probS_missingBJet_metSmearing_genuineBJet_background, "#rho smearing",
+      histogram_probS_missingBJet_jet_and_metSmearing_genuineBJet_background, "E_{b} + #rho smearing",
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.054, 0.25, 0.63, 0.34, 0.28, showHistograms_legendOptions,
       labelText_background, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
-      numBinsX_probS, xMin_probS, xMax_probS, "w_{0}", showHistograms_xAxisOffset_wRatio,
-      true, yMin_probS_wRatio, yMax_probS, -0.29, +0.29, "dN/dw_{0}", showHistograms_yAxisOffset_wRatio,
+      numBinsX_probS, xMin_probS, xMax_probS, "w_{0}^{m}", showHistograms_xAxisOffset_wRatio,
+      true, yMin_probS_wRatio, yMax_probS, -0.29, +0.29, "dN/dw_{0}^{m}", showHistograms_yAxisOffset_wRatio,
       "hh_bbwwMEM_dilepton_effectOfSmearing_probS_missingBJet_background.pdf");
 
     TH1* histogram_probB_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
@@ -1737,11 +1877,12 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
       histogram_probB_noSmearing_2genuineBJets_background, "MC truth",
-      histogram_probB_jetSmearing_2genuineBJets_background, "Jet smearing",
-      histogram_probB_metSmearing_2genuineBJets_background, "MET smearing",
-      histogram_probB_jet_and_metSmearing_2genuineBJets_background, "Jet+MET smearing",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.054, 0.25, 0.63, 0.34, 0.28,
+      histogram_probB_jetSmearing_2genuineBJets_background, "E_{b} smearing",
+      histogram_probB_metSmearing_2genuineBJets_background, "#rho smearing",
+      histogram_probB_jet_and_metSmearing_2genuineBJets_background, "E_{b} + #rho smearing",
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.054, 0.25, 0.63, 0.34, 0.28, showHistograms_legendOptions,
       labelText_background, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_probB, xMin_probB, xMax_probB, "w_{1}", showHistograms_xAxisOffset_wRatio,
@@ -1760,15 +1901,16 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
       histogram_probB_missingBJet_noSmearing_genuineBJet_background, "MC truth",
-      histogram_probB_missingBJet_jetSmearing_genuineBJet_background, "Jet smearing",
-      histogram_probB_missingBJet_metSmearing_genuineBJet_background, "MET smearing",
-      histogram_probB_missingBJet_jet_and_metSmearing_genuineBJet_background, "Jet+MET smearing",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.054, 0.25, 0.63, 0.34, 0.28,
+      histogram_probB_missingBJet_jetSmearing_genuineBJet_background, "E_{b} smearing",
+      histogram_probB_missingBJet_metSmearing_genuineBJet_background, "#rho smearing",
+      histogram_probB_missingBJet_jet_and_metSmearing_genuineBJet_background, "E_{b} + #rho smearing",
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.054, 0.25, 0.63, 0.34, 0.28, showHistograms_legendOptions,
       labelText_background, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
-      numBinsX_probB, xMin_probB, xMax_probB, "w_{1}", showHistograms_xAxisOffset_wRatio,
-      true, yMin_probB_wRatio, yMax_probB, -0.29, +0.29, "dN/dw_{1}", showHistograms_yAxisOffset_wRatio,
+      numBinsX_probB, xMin_probB, xMax_probB, "w_{1}^{m}", showHistograms_xAxisOffset_wRatio,
+      true, yMin_probB_wRatio, yMax_probB, -0.29, +0.29, "dN/dw_{1}^{m}", showHistograms_yAxisOffset_wRatio,
       "hh_bbwwMEM_dilepton_effectOfSmearing_probB_missingBJet_background.pdf");
     //-------------------------------------------------------------------------------------------------
 
@@ -1785,11 +1927,12 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
       histogram_memLR_noSmearing_2genuineBJets_signal, "MC truth",
-      histogram_memLR_jetSmearing_2genuineBJets_signal, "Jet smearing",
-      histogram_memLR_metSmearing_2genuineBJets_signal, "MET smearing",
-      histogram_memLR_jet_and_metSmearing_2genuineBJets_signal, "Jet+MET smearing",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.054, 0.37, 0.63, 0.34, 0.28,
+      histogram_memLR_jetSmearing_2genuineBJets_signal, "E_{b} smearing",
+      histogram_memLR_metSmearing_2genuineBJets_signal, "#rho smearing",
+      histogram_memLR_jet_and_metSmearing_2genuineBJets_signal, "E_{b} + #rho smearing",
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.054, 0.37, 0.63, 0.34, 0.28, showHistograms_legendOptions,
       labelText_signal, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_memLR, xMin_memLR, xMax_memLR, "P", showHistograms_xAxisOffset_wRatio,
@@ -1808,11 +1951,12 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
       histogram_memLR_noSmearing_2genuineBJets_background, "MC truth",
-      histogram_memLR_jetSmearing_2genuineBJets_background, "Jet smearing",
-      histogram_memLR_metSmearing_2genuineBJets_background, "MET smearing",
-      histogram_memLR_jet_and_metSmearing_2genuineBJets_background, "Jet+MET smearing",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.054, 0.37, 0.63, 0.34, 0.28,
+      histogram_memLR_jetSmearing_2genuineBJets_background, "E_{b} smearing",
+      histogram_memLR_metSmearing_2genuineBJets_background, "#rho smearing",
+      histogram_memLR_jet_and_metSmearing_2genuineBJets_background, "E_{b} + #rho smearing",
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.054, 0.37, 0.63, 0.34, 0.28, showHistograms_legendOptions,
       labelText_background, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_memLR, xMin_memLR, xMax_memLR, "P", showHistograms_xAxisOffset_wRatio,
@@ -1831,11 +1975,12 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showGraphs_wRatio(
       showGraphs_canvasSizeX, showGraphs_canvasSizeY_wRatio,
       graph_ROC_noSmearing_2genuineBJets_logScale, "MC truth",
-      graph_ROC_jetSmearing_2genuineBJets_logScale, "Jet smearing",
-      graph_ROC_metSmearing_2genuineBJets_logScale, "MET smearing",
-      graph_ROC_jet_and_metSmearing_2genuineBJets_logScale, "Jet+MET smearing",
-      showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, showGraphs_lineStyles, showGraphs_lineWidths,
-      0.054, 0.21, 0.63, 0.34, 0.28,
+      graph_ROC_jetSmearing_2genuineBJets_logScale, "E_{b} smearing",
+      graph_ROC_metSmearing_2genuineBJets_logScale, "#rho smearing",
+      graph_ROC_jet_and_metSmearing_2genuineBJets_logScale, "E_{b} + #rho smearing",
+      showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, 
+      showGraphs_lineStyles, showGraphs_lineWidths, showGraphs_drawOptions,
+      0.054, 0.21, 0.63, 0.34, 0.28, showGraphs_legendOptions,
       labelText_signal_vs_background, 0.040,
       0.1600, 0.9525, 0.2900, 0.0600,
       10, 0., 1.01, "Signal Efficiency", showGraphs_xAxisOffset_wRatio,
@@ -1854,15 +1999,16 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
       histogram_memLR_missingBJet_noSmearing_2genuineBJets_signal, "MC truth",
-      histogram_memLR_missingBJet_jetSmearing_2genuineBJets_signal, "Jet smearing",
-      histogram_memLR_missingBJet_metSmearing_2genuineBJets_signal, "MET smearing",
-      histogram_memLR_missingBJet_jet_and_metSmearing_2genuineBJets_signal, "Jet+MET smearing",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.054, 0.37, 0.63, 0.34, 0.28,
+      histogram_memLR_missingBJet_jetSmearing_2genuineBJets_signal, "E_{b} smearing",
+      histogram_memLR_missingBJet_metSmearing_2genuineBJets_signal, "#rho smearing",
+      histogram_memLR_missingBJet_jet_and_metSmearing_2genuineBJets_signal, "E_{b} + #rho smearing",
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.054, 0.37, 0.63, 0.34, 0.28, showHistograms_legendOptions,
       labelText_signal, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
-      numBinsX_memLR, xMin_memLR, xMax_memLR, "P", showHistograms_xAxisOffset_wRatio,
-      true, yMin_memLR_wRatio, yMax_memLR, -0.29, +0.29, "dN/dP", showHistograms_yAxisOffset_wRatio,
+      numBinsX_memLR, xMin_memLR, xMax_memLR, "P_{m}", showHistograms_xAxisOffset_wRatio,
+      true, yMin_memLR_wRatio, yMax_memLR, -0.29, +0.29, "dN/dP_{m}", showHistograms_yAxisOffset_wRatio,
       "hh_bbwwMEM_dilepton_effectOfSmearing_memLR_missingBJet_signal.pdf");
 
     TH1* histogram_memLR_missingBJet_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
@@ -1877,15 +2023,16 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
       histogram_memLR_missingBJet_noSmearing_2genuineBJets_background, "MC truth",
-      histogram_memLR_missingBJet_jetSmearing_2genuineBJets_background, "Jet smearing",
-      histogram_memLR_missingBJet_metSmearing_2genuineBJets_background, "MET smearing",
-      histogram_memLR_missingBJet_jet_and_metSmearing_2genuineBJets_background, "Jet+MET smearing",
-      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, showHistograms_lineStyles, showHistograms_lineWidths,
-      0.054, 0.37, 0.63, 0.34, 0.28,
+      histogram_memLR_missingBJet_jetSmearing_2genuineBJets_background, "E_{b} smearing",
+      histogram_memLR_missingBJet_metSmearing_2genuineBJets_background, "#rho smearing",
+      histogram_memLR_missingBJet_jet_and_metSmearing_2genuineBJets_background, "E_{b} + #rho smearing",
+      showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
+      showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
+      0.054, 0.37, 0.63, 0.34, 0.28, showHistograms_legendOptions,
       labelText_background, 0.055,
       0.1800, 0.9525, 0.2900, 0.0900,
-      numBinsX_memLR, xMin_memLR, xMax_memLR, "P", showHistograms_xAxisOffset_wRatio,
-      true, yMin_memLR_wRatio, yMax_memLR, -0.29, +0.29, "dN/dP", showHistograms_yAxisOffset_wRatio,
+      numBinsX_memLR, xMin_memLR, xMax_memLR, "P_{m}", showHistograms_xAxisOffset_wRatio,
+      true, yMin_memLR_wRatio, yMax_memLR, -0.29, +0.29, "dN/dP_{m}", showHistograms_yAxisOffset_wRatio,
       "hh_bbwwMEM_dilepton_effectOfSmearing_memLR_missingBJet_background.pdf");
 
     TGraph* graph_ROC_missingBJet_noSmearing_2genuineBJets_logScale = compGraphROC("graph_ROC_missingBJet_noSmearing_2genuineBJets",
@@ -1900,11 +2047,12 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showGraphs_wRatio(
       showGraphs_canvasSizeX, showGraphs_canvasSizeY_wRatio,
       graph_ROC_missingBJet_noSmearing_2genuineBJets_logScale, "MC truth",
-      graph_ROC_missingBJet_jetSmearing_2genuineBJets_logScale, "Jet smearing",
-      graph_ROC_missingBJet_metSmearing_2genuineBJets_logScale, "MET smearing",
-      graph_ROC_missingBJet_jet_and_metSmearing_2genuineBJets_logScale, "Jet+MET smearing",
-      showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, showGraphs_lineStyles, showGraphs_lineWidths,
-      0.054, 0.21, 0.63, 0.34, 0.28,
+      graph_ROC_missingBJet_jetSmearing_2genuineBJets_logScale, "E_{b} smearing",
+      graph_ROC_missingBJet_metSmearing_2genuineBJets_logScale, "#rho smearing",
+      graph_ROC_missingBJet_jet_and_metSmearing_2genuineBJets_logScale, "E_{b} + #rho smearing",
+      showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, 
+      showGraphs_lineStyles, showGraphs_lineWidths, showGraphs_drawOptions,
+      0.054, 0.21, 0.63, 0.34, 0.28, showGraphs_legendOptions,
       labelText_signal_vs_background, 0.040,
       0.1600, 0.9525, 0.2900, 0.0600,
       10, 0., 1.01, "Signal Efficiency", showGraphs_xAxisOffset_wRatio,
