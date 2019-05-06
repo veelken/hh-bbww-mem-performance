@@ -30,16 +30,16 @@ class MEMbbwwHistManager
   void
   bookHistograms(TFileDirectory& dir) override
   {
-    histogram_log_memProb_signal_        = book1D(dir, "log_memProb_signal",        200, -100., +100.);
-    histogram_log_memProbErr_signal_     = book1D(dir, "log_memProbErr_signal",     200, -100., +100.);
-    histogram_log_memProb_background_    = book1D(dir, "log_memProb_background",    200, -100., +100.);
-    histogram_log_memProbErr_background_ = book1D(dir, "log_memProbErr_background", 200, -100., +100.);
-    histogram_memLR_                     = book1D(dir, "memLR",                     360,    0.,    1.);
-    histogram_log_memLR_div_Err_         = book1D(dir, "log_memLR_div_Err",         200,  -10.,  +10.);
-    histogram_memScore_                  = book1D(dir, "memScore",                  360,  -18.,  +18.);
-    histogram_memCpuTime_                = book1D(dir, "memCpuTime",                100,    0., 1000.);
+    histogram_log_memProb_signal_        = book1D(dir, "log_memProb_signal",        2000, -100., +100.);
+    histogram_log_memProbErr_signal_     = book1D(dir, "log_memProbErr_signal",     2000, -100., +100.);
+    histogram_log_memProb_background_    = book1D(dir, "log_memProb_background",    2000, -100., +100.);
+    histogram_log_memProbErr_background_ = book1D(dir, "log_memProbErr_background", 2000, -100., +100.);
+    histogram_memLR_                     = book1D(dir, "memLR",                     3600,    0.,    1.);
+    histogram_log_memLR_div_Err_         = book1D(dir, "log_memLR_div_Err",         2000,  -10.,  +10.);
+    histogram_memScore_                  = book1D(dir, "memScore",                  3600,  -18.,  +18.);
+    histogram_memCpuTime_                = book1D(dir, "memCpuTime",                1000,    0., 1000.);
 
-    histogram_EventCounter_              = book1D(dir, "EventCounter",                1,   -0.5,  +0.5);
+    histogram_EventCounter_              = book1D(dir, "EventCounter",                 1,   -0.5,  +0.5);
   }
 
   void
