@@ -46,7 +46,7 @@
 #include "hhAnalysis/bbwwMEM/interface/MeasuredParticle.h" // MeasuredParticle
 #include "hhAnalysis/bbwwMEM/interface/memAuxFunctions.h"
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/BJetTF_toy.h" // BJetTF_toy
-#include "hhAnalysis/bbww/interface/testMEMauxFunctions.h" // findGenLepton_and_NeutrinoFromWBoson
+#include "hhAnalysis/bbww/interface/genMatchingAuxFunctions.h" // findGenLepton_and_NeutrinoFromWBoson
 #include "tthAnalysis/HiggsToTauTau/interface/histogramAuxFunctions.h" // fillWithOverFlow()
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/GenJetSmearer.h" // GenJetSmearer
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/GenMEtSmearer.h" // GenMEtSmearer
@@ -429,11 +429,11 @@ int main(int argc, char* argv[])
       }
       if ( genWBosonPlus && genWBosonMinus ) {
 	std::pair<const GenLepton*, const GenParticle*> genLepton_and_NeutrinoFromWBosonPlus =
-          findGenLepton_and_NeutrinoFromWBoson(genWBosonPlus, genLeptons, genNeutrinos);
+          findGenLepton_and_NeutrinoFromWBoson(*genWBosonPlus, genLeptons, genNeutrinos);
 	const GenLepton* genLeptonPlus = genLepton_and_NeutrinoFromWBosonPlus.first;
 	const GenParticle* genNeutrino = genLepton_and_NeutrinoFromWBosonPlus.second;
 	std::pair<const GenLepton*, const GenParticle*> genLepton_and_NeutrinoFromWBosonMinus =
-          findGenLepton_and_NeutrinoFromWBoson(genWBosonMinus, genLeptons, genNeutrinos);
+          findGenLepton_and_NeutrinoFromWBoson(*genWBosonMinus, genLeptons, genNeutrinos);
 	const GenLepton* genLeptonMinus = genLepton_and_NeutrinoFromWBosonMinus.first;
 	const GenParticle* genAntiNeutrino = genLepton_and_NeutrinoFromWBosonMinus.second;
 	if ( !(genLeptonPlus && genNeutrino && genLeptonMinus && genAntiNeutrino) ) continue;
@@ -466,15 +466,15 @@ int main(int argc, char* argv[])
 //--- apply pT and eta cuts to generator-level leptons and b-jets,
 //    clean collection of generator-level b-jets with respect to leptons
     std::vector<const GenLepton*> genLeptonsForMatching_ptrs = convert_to_ptrs(genLeptonsForMatching);
-    std::vector<const GenLepton*> selGenLeptons = genLeptonSelector(genLeptonsForMatching_ptrs, isHigherPt_GenLepton_ptr);
+    std::vector<const GenLepton*> selGenLeptons = genLeptonSelector(genLeptonsForMatching_ptrs, isHigherPt);
 
     std::vector<const GenJet*> genBJetsForMatching_ptrs = convert_to_ptrs(genBJetsForMatching);
     std::vector<const GenJet*> cleanedGenBJets = genJetCleaner(genBJetsForMatching_ptrs, genLeptonsForMatching_ptrs);
-    std::vector<const GenJet*> selGenBJets = genJetSelector(cleanedGenBJets, isHigherPt_GenJet_ptr);
+    std::vector<const GenJet*> selGenBJets = genJetSelector(cleanedGenBJets, isHigherPt);
 
     std::vector<const GenJet*> genJets_ptrs = convert_to_ptrs(genJets);
     std::vector<const GenJet*> cleanedGenJets = genJetCleaner(genJets_ptrs, genLeptonsForMatching_ptrs, genBJetsForMatching_ptrs);
-    std::vector<const GenJet*> selGenJets = genJetSelector(cleanedGenJets, isHigherPt_GenJet_ptr);
+    std::vector<const GenJet*> selGenJets = genJetSelector(cleanedGenJets, isHigherPt);
 
     GenMEt genMEt(genMEtPx, genMEtPy);
 
