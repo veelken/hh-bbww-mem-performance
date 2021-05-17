@@ -6,7 +6,7 @@ from tthAnalysis.HiggsToTauTau.jobTools import query_yes_no
 from tthAnalysis.HiggsToTauTau.analysisSettings import systematics, get_lumi
 from tthAnalysis.HiggsToTauTau.runConfig import tthAnalyzeParser, filter_samples
 
-# E.g.: ./hhAnalyzeRun_bbwwMEM_dilepton.py -v 2019Feb01 -e 2017
+# E.g.: ./hhAnalyzeRun_bbwwMEM_dilepton.py -v 2019Feb01 -e 2016
 
 parser = tthAnalyzeParser()
 parser.add_rle_select()
@@ -30,10 +30,12 @@ rle_select        = os.path.expanduser(args.rle_select)
 files_per_job     = args.files_per_job
 use_home          = args.use_home
 
-if era == "2017":
-  from hhAnalysis.bbwwMEMPerformanceStudies.samples.hhAnalyzeSamples_2017 import samples_2017 as samples
+if era == "2016":
+  from hhAnalysis.bbwwMEMPerformanceStudies.samples.hhAnalyzeSamples_2016 import samples_2016 as samples
 else:
-  raise ValueError("Invalid era: %s" % era)
+  print("Please use '2016' era, as the LO SM HH signal MC samples for the '2017' and '2018' eras are affected by a coupling bug!")
+  print(" c.f. https://indico.cern.ch/event/996685/contributions/4251752/attachments/2198363/3717406/HH_bbWW_LOtoNLOreweighting_2021Mar01.pdf")
+  ValueError("Aborting.")
 
 if __name__ == '__main__':
   logging.basicConfig(

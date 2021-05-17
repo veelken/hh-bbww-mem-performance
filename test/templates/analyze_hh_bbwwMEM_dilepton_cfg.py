@@ -22,6 +22,7 @@ process.fwliteOutput = cms.PSet(
 process.analyze_hh_bbwwMEM_dilepton = cms.PSet(
     treeName = cms.string('Events'),
 
+    skipSelEvents = cms.int32(0),
     maxSelEvents = cms.int32(1000),
 
     process = cms.string(''),

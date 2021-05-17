@@ -145,7 +145,19 @@ class analyzeConfig_hh_bbwwMEM_dilepton(analyzeConfig_hh):
           sample_category = sample_info["sample_category"]
 
           inputFileList = inputFileLists[sample_name]
-          numJobsPerFile = 400 if isSignal else 10
+          numJobsPerFile = None
+          if   sample_info["process_name_specific"] == "signal_ggf_nonresonant_node_sm_hh_2b2v":
+            numJobsPerFile = 500
+          elif sample_info["process_name_specific"] == "signal_ggf_nonresonant_cHHH1_hh_2b2v":
+            numJobsPerFile = 100
+          elif sample_info["process_name_specific"] == "TTJets_DiLept"
+            numJobsPerFile = 50
+          elif sample_info["process_name_specific"] == "TTJets_DiLept_ext1"
+            numJobsPerFile = 50
+          elif sample_info["process_name_specific"] == "TTTo2L2Nu" 
+            numJobsPerFile = 10
+          else:
+            raise ValueError("Invalid sample: %s" % sample_info["process_name_specific"])
           numJobs = numJobsPerFile*len(inputFileList.keys())
           for jobId in range(1, numJobs + 1):
             
