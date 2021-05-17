@@ -1,6 +1,7 @@
 <bin file="analyze_hh_bbwwMEM_dilepton.cc" name="analyze_hh_bbwwMEM_dilepton">
   <use   name="FWCore/FWLite"/>
   <use   name="FWCore/ParameterSet"/>
+  <use   name="FWCore/ParameterSetReader"/>
   <use   name="FWCore/PythonParameterSet"/>
   <use   name="FWCore/Utilities"/>
   <use   name="DataFormats/FWLite"/>
