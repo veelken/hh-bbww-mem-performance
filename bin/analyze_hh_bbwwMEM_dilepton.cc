@@ -50,6 +50,7 @@
 #include "tthAnalysis/HiggsToTauTau/interface/histogramAuxFunctions.h" // fillWithOverFlow()
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/GenJetSmearer.h" // GenJetSmearer
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/GenMEtSmearer.h" // GenMEtSmearer
+#include "hhAnalysis/multilepton/interface/AnalysisConfig_hh.h" // AnalysisConfig_hh
 
 #include <iostream> // std::cerr, std::fixed
 #include <iomanip> // std::setprecision(), std::setw()
@@ -91,6 +92,7 @@ int main(int argc, char* argv[])
   edm::ParameterSet cfg = edm::readPSetsFrom(argv[1])->getParameter<edm::ParameterSet>("process");
 
   edm::ParameterSet cfg_analyze = cfg.getParameter<edm::ParameterSet>("analyze_hh_bbwwMEM_dilepton");
+  AnalysisConfig_hh analysisConfig("HH->bbWW", cfg_analyze);
 
   std::string treeName = cfg_analyze.getParameter<std::string>("treeName");
 
@@ -172,7 +174,7 @@ int main(int argc, char* argv[])
   std::cout << "Loaded " << inputTree->getFileCount() << " file(s)." << std::endl;
 
 //--- declare event-level variables
-  EventInfo eventInfo(isSignal, true, false);
+  EventInfo eventInfo(analysisConfig);
   EventInfoReader eventInfoReader(&eventInfo);
   inputTree->registerReader(&eventInfoReader);
 
