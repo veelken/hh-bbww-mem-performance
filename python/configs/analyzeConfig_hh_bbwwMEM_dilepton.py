@@ -49,25 +49,28 @@ class analyzeConfig_hh_bbwwMEM_dilepton(analyzeConfig_hh):
         use_home          = True,
       ):
     analyzeConfig_hh.__init__(self,
-      configDir          = configDir,
-      outputDir          = outputDir,
-      executable_analyze = executable_analyze,
-      channel            = "hh_bbwwMEM_dilepton",
-      samples            = samples,
-      central_or_shifts  = [ "central" ],
-      max_files_per_job  = max_files_per_job,
-      era                = era,
-      use_lumi           = False,
-      lumi               = 1.,
-      check_output_files = check_output_files,
-      running_method     = running_method,
-      num_parallel_jobs  = num_parallel_jobs,
-      histograms_to_fit  = [],
-      triggers           = [],
-      verbose            = verbose,
-      isDebug            = isDebug,
-      use_home           = use_home,
-      template_dir       = os.path.join(os.getenv('CMSSW_BASE'), 'src', 'hhAnalysis', 'bbwwMEMPerformanceStudies', 'test', 'templates')
+      configDir             = configDir,
+      outputDir             = outputDir,
+      executable_analyze    = executable_analyze,
+      channel               = "hh_bbwwMEM_dilepton",
+      samples               = samples,
+      jet_cleaning_by_index = False,
+      gen_matching_by_index = False,
+      central_or_shifts     = [ "central" ],
+      max_files_per_job     = max_files_per_job,
+      era                   = era,
+      use_lumi              = False,
+      lumi                  = 1.,
+      check_output_files    = check_output_files,
+      running_method        = running_method,
+      num_parallel_jobs     = num_parallel_jobs,
+      histograms_to_fit     = [],
+      triggers              = [],
+      lep_mva_wp            = "hh_multilepton",
+      verbose               = verbose,
+      isDebug               = isDebug,
+      use_home              = use_home,
+      template_dir          = os.path.join(os.getenv('CMSSW_BASE'), 'src', 'hhAnalysis', 'bbwwMEMPerformanceStudies', 'test', 'templates')
     )
     self.apply_jetSmearing_options = apply_jetSmearing_options
     self.apply_metSmearing_options = apply_metSmearing_options
@@ -98,7 +101,7 @@ class analyzeConfig_hh_bbwwMEM_dilepton(analyzeConfig_hh):
         continue
       process_name = sample_info["process_name_specific"]
       key_dir = getKey(process_name)
-      for dir_type in [ DKEY_CFGS, DKEY_HIST, DKEY_LOGS, DKEY_ROOT, DKEY_RLES, DKEY_SYNC ]:
+      for dir_type in [ DKEY_CFGS, DKEY_HIST, DKEY_LOGS, DKEY_RLES, DKEY_SYNC ]:
         initDict(self.dirs, [ key_dir, dir_type ])
         if dir_type in [ DKEY_CFGS, DKEY_LOGS ]:
           self.dirs[key_dir][dir_type] = os.path.join(self.configDir, dir_type, self.channel, process_name)
