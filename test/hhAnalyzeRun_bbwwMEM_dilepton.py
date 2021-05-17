@@ -6,7 +6,7 @@ from tthAnalysis.HiggsToTauTau.jobTools import query_yes_no
 from tthAnalysis.HiggsToTauTau.analysisSettings import systematics, get_lumi
 from tthAnalysis.HiggsToTauTau.runConfig import tthAnalyzeParser, filter_samples
 
-# E.g.: ./hhAnalyzeRun_bbwwMEM_dilepton.py -v 2019Feb01 -e 2016
+# E.g.: ./hhAnalyzeRun_bbwwMEM_dilepton.py -v 2021May17 -e 2016
 
 parser = tthAnalyzeParser()
 parser.add_rle_select()
