@@ -610,12 +610,18 @@ int main(int argc, char* argv[])
     //---------------------------------------------------------------------------
     // CV: Compute MEM likelihood ratio of HH signal and ttbar background hypotheses
 
-    std::cout << "selGenLepton_lead: pT = " << selGenLepton_lead->pt() << ", eta = " << selGenLepton_lead->eta() << ", phi = " << selGenLepton_lead->phi() << std::endl;
-    std::cout << "selGenLepton_sublead: pT = " << selGenLepton_sublead->pt() << ", eta = " << selGenLepton_sublead->eta() << ", phi = " << selGenLepton_sublead->phi() << std::endl;
-    std::cout << "selGenBJet_lead: pT = " << selGenBJet_lead->pt() << ", eta = " << selGenBJet_lead->eta() << ", phi = " << selGenBJet_lead->phi() 
-	      << " (isFake = " << selGenBJet_lead_isFake << ")" << std::endl;
-    std::cout << "selGenBJet_sublead: pT = " << selGenBJet_sublead->pt() << ", eta = " << selGenBJet_sublead->eta() << ", phi = " << selGenBJet_sublead->phi() 
-	      << " (isFake = " << selGenBJet_sublead_isFake << ")" << std::endl;
+    if ( isDEBUG ) {
+      std::cout << "selGenLepton_lead: pT = " << selGenLepton_lead->pt() << "," 
+                << " eta = " << selGenLepton_lead->eta() << ", phi = " << selGenLepton_lead->phi() << std::endl;
+      std::cout << "selGenLepton_sublead: pT = " << selGenLepton_sublead->pt() << "," 
+                << " eta = " << selGenLepton_sublead->eta() << ", phi = " << selGenLepton_sublead->phi() << std::endl;
+      std::cout << "selGenBJet_lead: pT = " << selGenBJet_lead->pt() << "," 
+                << " eta = " << selGenBJet_lead->eta() << ", phi = " << selGenBJet_lead->phi() 
+	        << " (isFake = " << selGenBJet_lead_isFake << ")" << std::endl;
+      std::cout << "selGenBJet_sublead: pT = " << selGenBJet_sublead->pt() << "," 
+                << " eta = " << selGenBJet_sublead->eta() << ", phi = " << selGenBJet_sublead->phi() 
+	        << " (isFake = " << selGenBJet_sublead_isFake << ")" << std::endl;
+    }
 
     int memLeptonType_lead;   
     double memLeptonMass_lead;   
@@ -671,16 +677,14 @@ int main(int argc, char* argv[])
 
     const double sqrtS = 13.e+3;
     const std::string pdfName = "MSTW2008lo68cl";
-    const std::string madgraphFileName_signal     = "hhAnalysis/bbwwMEM/data/param_hh.dat";
+    const std::string madgraphFileName_signal     = "hhAnalysis/bbwwMEM/data/param_hh_SM.dat";
     const std::string madgraphFileName_background = "hhAnalysis/bbwwMEM/data/param_ttbar.dat";
     const bool applyOnshellWmassConstraint_signal = false;
-    const int memAlgo_verbosity = 1;
-    //const int memAlgo_verbosity = 3;
+    const int memAlgo_verbosity = 0;
     //const int maxObjFunctionCalls_signal = 2500;
     //const int maxObjFunctionCalls_background = 25000;
     const int maxObjFunctionCalls_signal = 1000;
     const int maxObjFunctionCalls_background = 10000;
-    //const int maxObjFunctionCalls_background = 1000;
 
     clock.Reset();
     clock.Start("memAlgo");
@@ -696,11 +700,16 @@ int main(int argc, char* argv[])
     clock.Stop("memAlgo");
 
     double memCpuTime = clock.GetCpuTime("memAlgo");
-    std::cout << "MEM:"
-	      << " probability for signal hypothesis = " << memResult.getProb_signal() << " +/- " << memResult.getProbErr_signal() << ","
-	      << " probability for background hypothesis = " << memResult.getProb_background() << " +/- " << memResult.getProbErr_background() << " " 
-	      << "--> likelihood ratio = " << memResult.getLikelihoodRatio() << " +/- " << memResult.getLikelihoodRatioErr() 
-	      << " (CPU time = " << memCpuTime << ")" << std::endl;
+    if ( isDEBUG ) {
+      std::cout << "MEM:"
+	        << " probability for signal hypothesis = " << memResult.getProb_signal() 
+                << " +/- " << memResult.getProbErr_signal() << ","
+	        << " probability for background hypothesis = " << memResult.getProb_background() 
+                << " +/- " << memResult.getProbErr_background() << " " 
+	        << "--> likelihood ratio = " << memResult.getLikelihoodRatio() 
+                << " +/- " << memResult.getLikelihoodRatioErr() 
+	        << " (CPU time = " << memCpuTime << ")" << std::endl;
+    }
 
     clock.Reset();
     clock.Start("memAlgo_missingBJet");
@@ -716,11 +725,16 @@ int main(int argc, char* argv[])
     clock.Stop("memAlgo_missingBJet");
     
     double memCpuTime_missingBJet = clock.GetCpuTime("memAlgo_missingBJet");
-    std::cout << "MEM (missing b-jet case):" 
-	      << " probability for signal hypothesis = " << memResult_missingBJet.getProb_signal() << " +/- " << memResult_missingBJet.getProbErr_signal() << ","
-	      << " probability for background hypothesis = " << memResult_missingBJet.getProb_background() << " +/- " << memResult_missingBJet.getProbErr_background() << " " 
-	      << "--> likelihood ratio = " << memResult_missingBJet.getLikelihoodRatio() << " +/- " << memResult_missingBJet.getLikelihoodRatioErr() 
-	      << " (CPU time = " << memCpuTime_missingBJet << ")" << std::endl;
+    if ( isDEBUG ) {
+      std::cout << "MEM (missing b-jet case):" 
+	        << " probability for signal hypothesis = " << memResult_missingBJet.getProb_signal() 
+                << " +/- " << memResult_missingBJet.getProbErr_signal() << ","
+	        << " probability for background hypothesis = " << memResult_missingBJet.getProb_background() 
+                << " +/- " << memResult_missingBJet.getProbErr_background() << " " 
+	        << "--> likelihood ratio = " << memResult_missingBJet.getLikelihoodRatio() 
+                << " +/- " << memResult_missingBJet.getLikelihoodRatioErr() 
+	        << " (CPU time = " << memCpuTime_missingBJet << ")" << std::endl;
+    }
     //---------------------------------------------------------------------------
 
     if ( selGenBJet_lead_isFake && selGenBJet_sublead_isFake ) {

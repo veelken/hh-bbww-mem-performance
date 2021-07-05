@@ -78,6 +78,7 @@ class analyzeConfig_hh_bbwwMEM_dilepton(analyzeConfig_hh):
     self.select_rle_output = select_rle_output
     self.rle_select = rle_select
     self.evtCategory_inclusive = "hh_bbwwMEM_dilepton"
+    self.make_dependency_hadd_stage2 = "phony_hadd_stage1"
 
   def createCfg_analyze(self, jobOptions, sample_info):
     """Create python configuration file for the analyze_hh_bbwwMEM_dilepton executable (analysis code)

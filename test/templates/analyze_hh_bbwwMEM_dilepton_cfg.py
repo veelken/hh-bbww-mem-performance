@@ -5,6 +5,7 @@ import os
 # CV: imports needed by analyzeConfig.py base-class
 from tthAnalysis.HiggsToTauTau.configs.recommendedMEtFilters_cfi import *
 from tthAnalysis.HiggsToTauTau.configs.EvtYieldHistManager_cfi import *
+from tthAnalysis.HiggsToTauTau.configs.hhWeight_cfi import hhWeight
 #--------------------------------------------------------------------------------
 
 process = cms.PSet()
@@ -12,7 +13,7 @@ process = cms.PSet()
 process.fwliteInput = cms.PSet(
     fileNames = cms.vstring(),
     maxEvents = cms.int32(-1),
-    outputEvery = cms.uint32(1)
+    outputEvery = cms.uint32(100)
 )
 
 process.fwliteOutput = cms.PSet(
@@ -52,6 +53,12 @@ process.analyze_hh_bbwwMEM_dilepton = cms.PSet(
 
     selEventsFileName_input = cms.string(''),
     selEventsFileName_output = cms.string(''),
+  
+    # general configuration parameters, required by our analysis framework
+    leptonFakeRateWeight = cms.PSet(),
+    hhWeight_cfg = hhWeight,
+    gen_mHH = cms.vdouble(),
+    nonRes_BMs = cms.vstring(),
 
     isDEBUG = cms.bool(False)
 )
