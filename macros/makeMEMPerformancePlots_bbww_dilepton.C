@@ -48,14 +48,14 @@ TH1* loadHistogram(TFile* inputFile, const std::string& directory_part1, const s
   return histogram;
 }
 
-TH1* addHistograms(const std::string& histogramSumName, const TH1* histogram1, const TH1* histogram2, const TH1* histogram3)
+TH1* addHistograms(const std::string& histogramSumName, const TH1* histogram1, const TH1* histogram2, const TH1* histogram3 = nullptr)
 {
   TH1* histogramSum = (TH1*)histogram1->Clone(histogramSumName.data());
   histogramSum->Reset();
   if ( !histogramSum->GetSumw2N() ) histogramSum->Sumw2();
   histogramSum->Add(histogram1);
   histogramSum->Add(histogram2);
-  if ( histogram3 ) histogramSum->Add(histogram2);
+  if ( histogram3 ) histogramSum->Add(histogram3);
   double integral = histogramSum->Integral(1, histogramSum->GetNbinsX()); // CV: exclude underflow and overflow bins
   if ( integral > 0. ) histogramSum->Scale(1./integral);
   return histogramSum;
@@ -1201,20 +1201,19 @@ void makeMEMPerformancePlots_bbww_dilepton()
   directories_part1[true][false]       = "hh_bbwwMEM_dilepton_jetSmearingEnabled_metSmearingDisabled";
   directories_part1[true][true]        = "hh_bbwwMEM_dilepton_jetSmearingEnabled_metSmearingEnabled";
   
-  std::map<bool, std::map<bool, std::string>> directories_part2; // key = selGenBJet_lead_isFake, selGenBJet_sublead_isFake
-  directories_part2[false][false]      = "sel/mem_genuineLeadingBJet_genuineSubleadingBJet";
-  directories_part2[false][true]       = "sel/mem_genuineLeadingBJet_fakeSubleadingBJet";
-  directories_part2[true][false]       = "sel/mem_fakeLeadingBJet_genuineSubleadingBJet";
-  directories_part2[true][true]        = "sel/mem_fakeLeadingBJet_fakeSubleadingBJet";
-
-  std::map<bool, std::string> directories_part2_missingBJet; // key = selGenBJet_isFake
-  directories_part2_missingBJet[false] = "sel/mem_missingBJet_genuineBJet";
-  directories_part2_missingBJet[true]  = "sel/mem_missingBJet_fakeBJet";
+  std::map<int, std::string> directories_part2; // key = number of genuine b-jets
+  directories_part2[2]                 = "sel/mem_2genuineBJets";
+  directories_part2[1]                 = "sel/mem_1genuineBJet";
+  directories_part2[0]                 = "sel/mem_0genuineBJets";
+  
+  std::map<int, std::string> directories_part2_missingBJet; // key = 1 (0) if b-jet is genuine (fake)
+  directories_part2_missingBJet[1]     = "sel/mem_missingBJet_genuineBJet";
+  directories_part2_missingBJet[0]     = "sel/mem_missingBJet_fakeBJet";
 
   std::map<int, std::string> histogramNames; // key = { kProbSignal, kProbBackground, kLR }
-  histogramNames[kProbSignal]        = "log_memProb_signal";
-  histogramNames[kProbBackground]    = "log_memProb_background";
-  histogramNames[kLR]                = "memLR";
+  histogramNames[kProbSignal]          = "log_memProb_signal";
+  histogramNames[kProbBackground]      = "log_memProb_background";
+  histogramNames[kLR]                  = "memLR";
 
   std::string labelText_signal = "HH #rightarrow b#bar{b} WW^{*} #rightarrow b#bar{b} l^{+}#nu l^{-}#bar{#nu}";
   std::string labelText_background = "t#bar{t} #rightarrow bW #bar{b}W #rightarrow b l^{+}#nu #bar{b} l^{-}#bar{#nu}";
@@ -1283,9 +1282,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
   if ( makePlots_signal_vs_background ) {
     //-------------------------------------------------------------------------------------------------
     TH1* histogram_probS_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kSignal_lo, histogramNames[kProbSignal]);
+      directories_part1[false][false], directories_part2[2], kSignal_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kBackground_lo, histogramNames[kProbSignal]);
+      directories_part1[false][false], directories_part2[2], kBackground_lo, histogramNames[kProbSignal]);
 
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
@@ -1303,9 +1302,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
       "hh_bbwwMEM_dilepton_signal_vs_background_probS_unsmeared.pdf");
 
     TH1* histogram_probB_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kSignal_lo, histogramNames[kProbBackground]);
+      directories_part1[false][false], directories_part2[2], kSignal_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kBackground_lo, histogramNames[kProbBackground]);
+      directories_part1[false][false], directories_part2[2], kBackground_lo, histogramNames[kProbBackground]);
 
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
@@ -1323,9 +1322,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
       "hh_bbwwMEM_dilepton_signal_vs_background_probB_unsmeared.pdf");
 
     TH1* histogram_memLR_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kSignal_lo, histogramNames[kLR]);
+      directories_part1[false][false], directories_part2[2], kSignal_lo, histogramNames[kLR]);
     TH1* histogram_memLR_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kBackground_lo, histogramNames[kLR]);
+      directories_part1[false][false], directories_part2[2], kBackground_lo, histogramNames[kLR]);
 
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
@@ -1365,23 +1364,20 @@ void makeMEMPerformancePlots_bbww_dilepton()
   if ( makePlots_effectOfFakes ) {
     //-------------------------------------------------------------------------------------------------
     TH1* histogram_probS_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kSignal_lo, histogramNames[kProbSignal]);
-    TH1* histogram_probS_noSmearing_fakeLeadBJet_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[true][false], kSignal_lo, histogramNames[kProbSignal]);
-    TH1* histogram_probS_noSmearing_fakeSubleadBJet_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][true], kSignal_lo, histogramNames[kProbSignal]);
-    TH1* histogram_probS_noSmearing_2fakeBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[true][true], kSignal_lo, histogramNames[kProbSignal]);
+      directories_part1[false][false], directories_part2[2], kSignal_lo, histogramNames[kProbSignal]);
+    TH1* histogram_probS_noSmearing_1genuineBJet_signal = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[1], kSignal_lo, histogramNames[kProbSignal]);
+    TH1* histogram_probS_noSmearing_0genuineBJets_signal = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[0], kSignal_lo, histogramNames[kProbSignal]);
   
-    TH1* histogram_probS_noSmearing_1fakeBJet_signal = addHistograms("histogram_probS_noSmearing_1fakeBJet_signal",
-      histogram_probS_noSmearing_fakeLeadBJet_signal, 
-      histogram_probS_noSmearing_fakeSubleadBJet_signal, 
-      histogram_probS_noSmearing_2fakeBJets_signal);
+    TH1* histogram_probS_noSmearing_geq1fakeBJet_signal = addHistograms("histogram_probS_noSmearing_geq1fakeBJet_signal",
+      histogram_probS_noSmearing_1genuineBJet_signal, 
+      histogram_probS_noSmearing_0genuineBJets_signal);
 
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
       histogram_probS_noSmearing_2genuineBJets_signal, "2 genuine b-jets",
-      histogram_probS_noSmearing_1fakeBJet_signal, "#geq 1 fake b-jet",
+      histogram_probS_noSmearing_geq1fakeBJet_signal, "#geq 1 fake b-jet",
       nullptr, "",
       nullptr, "",
       showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
@@ -1395,9 +1391,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
       histogram_probS_noSmearing_2genuineBJets_signal, "2 genuine b-jets",
-      histogram_probS_noSmearing_fakeLeadBJet_signal, "fake lead. b-jet",
-      histogram_probS_noSmearing_fakeSubleadBJet_signal, "fake sublead. b-jet",
-      histogram_probS_noSmearing_2fakeBJets_signal, "2 fake b-jets",
+      histogram_probS_noSmearing_1genuineBJet_signal, "1 genuine + 1 fake b-jet",
+      histogram_probS_noSmearing_0genuineBJets_signal, "2 fake b-jets",
+      nullptr, "",
       showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
       showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
       0.045, 0.23, 0.66, 0.33, 0.28, showHistograms_legendOptions,
@@ -1405,12 +1401,12 @@ void makeMEMPerformancePlots_bbww_dilepton()
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_probS, xMin_probS, xMax_probS, "log w_{0}", showHistograms_xAxisOffset,
       true, yMin_probS, yMax_probS, "dN/dlog w_{0}", showHistograms_yAxisOffset, 
-      "hh_bbwwMEM_dilepton_effectOfFakes_4histograms_probS_signal.pdf");
+      "hh_bbwwMEM_dilepton_effectOfFakes_3histograms_probS_signal.pdf");
 
     TH1* histogram_probS_missingBJet_noSmearing_genuineBJet_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[false], kSignal_lo, histogramNames[kProbSignal]);
+      directories_part1[false][false], directories_part2_missingBJet[1], kSignal_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_missingBJet_noSmearing_fakeBJet_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[true], kSignal_lo, histogramNames[kProbSignal]);
+      directories_part1[false][false], directories_part2_missingBJet[0], kSignal_lo, histogramNames[kProbSignal]);
 
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
@@ -1428,23 +1424,20 @@ void makeMEMPerformancePlots_bbww_dilepton()
       "hh_bbwwMEM_dilepton_effectOfFakes_probS_missingBJet_signal.pdf");
     
     TH1* histogram_probB_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kSignal_lo, histogramNames[kProbBackground]);
-    TH1* histogram_probB_noSmearing_fakeLeadBJet_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[true][false], kSignal_lo, histogramNames[kProbBackground]);
-    TH1* histogram_probB_noSmearing_fakeSubleadBJet_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][true], kSignal_lo, histogramNames[kProbBackground]);
-    TH1* histogram_probB_noSmearing_2fakeBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[true][true], kSignal_lo, histogramNames[kProbBackground]);
+      directories_part1[false][false], directories_part2[2], kSignal_lo, histogramNames[kProbBackground]);
+    TH1* histogram_probB_noSmearing_1genuineBJet_signal = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[1], kSignal_lo, histogramNames[kProbBackground]);
+    TH1* histogram_probB_noSmearing_0genuineBJets_signal = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[0], kSignal_lo, histogramNames[kProbBackground]);
   
-    TH1* histogram_probB_noSmearing_1fakeBJet_signal = addHistograms("histogram_probB_noSmearing_1fakeBJet_signal",
-      histogram_probB_noSmearing_fakeLeadBJet_signal, 
-      histogram_probB_noSmearing_fakeSubleadBJet_signal, 
-      histogram_probB_noSmearing_2fakeBJets_signal);
+    TH1* histogram_probB_noSmearing_geq1fakeBJet_signal = addHistograms("histogram_probB_noSmearing_geq1fakeBJet_signal",
+      histogram_probB_noSmearing_1genuineBJet_signal, 
+      histogram_probB_noSmearing_0genuineBJets_signal);
 
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
       histogram_probB_noSmearing_2genuineBJets_signal, "2 genuine b-jets",
-      histogram_probB_noSmearing_1fakeBJet_signal, "#geq 1 fake b-jet",
+      histogram_probB_noSmearing_geq1fakeBJet_signal, "#geq 1 fake b-jet",
       nullptr, "",
       nullptr, "",
       showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
@@ -1458,9 +1451,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
       histogram_probB_noSmearing_2genuineBJets_signal, "2 genuine b-jets",
-      histogram_probB_noSmearing_fakeLeadBJet_signal, "fake lead. b-jet",
-      histogram_probB_noSmearing_fakeSubleadBJet_signal, "fake sublead. b-jet",
-      histogram_probB_noSmearing_2fakeBJets_signal, "2 fake b-jets",
+      histogram_probB_noSmearing_1genuineBJet_signal, "1 genuine + 1 fake b-jet",
+      histogram_probB_noSmearing_0genuineBJets_signal, "2 fake b-jets",
+      nullptr, "",
       showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
       showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
       0.045, 0.25, 0.69, 0.28, 0.23, showHistograms_legendOptions,
@@ -1468,12 +1461,12 @@ void makeMEMPerformancePlots_bbww_dilepton()
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_probB, xMin_probB, xMax_probB, "log w_{1}",showHistograms_xAxisOffset,
       true, 1.e-4, 1.e0, "dN/dlog w_{1}", showHistograms_yAxisOffset,
-      "hh_bbwwMEM_dilepton_effectOfFakes_4histograms_probB_signal.pdf");
+      "hh_bbwwMEM_dilepton_effectOfFakes_3histograms_probB_signal.pdf");
 
     TH1* histogram_probB_missingBJet_noSmearing_genuineBJet_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[false], kSignal_lo, histogramNames[kProbBackground]);
+      directories_part1[false][false], directories_part2_missingBJet[1], kSignal_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_missingBJet_noSmearing_fakeBJet_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[true], kSignal_lo, histogramNames[kProbBackground]);
+      directories_part1[false][false], directories_part2_missingBJet[0], kSignal_lo, histogramNames[kProbBackground]);
 
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
@@ -1493,23 +1486,20 @@ void makeMEMPerformancePlots_bbww_dilepton()
 
     //-------------------------------------------------------------------------------------------------
     TH1* histogram_probS_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kBackground_lo, histogramNames[kProbSignal]);
-    TH1* histogram_probS_noSmearing_fakeLeadBJet_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[true][false], kBackground_lo, histogramNames[kProbSignal]);
-    TH1* histogram_probS_noSmearing_fakeSubleadBJet_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][true], kBackground_lo, histogramNames[kProbSignal]);
-    TH1* histogram_probS_noSmearing_2fakeBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[true][true], kBackground_lo, histogramNames[kProbSignal]);
+      directories_part1[false][false], directories_part2[2], kBackground_lo, histogramNames[kProbSignal]);
+    TH1* histogram_probS_noSmearing_1genuineBJet_background = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[1], kBackground_lo, histogramNames[kProbSignal]);
+    TH1* histogram_probS_noSmearing_0genuineBJets_background = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[0], kBackground_lo, histogramNames[kProbSignal]);
   
-    TH1* histogram_probS_noSmearing_1fakeBJet_background = addHistograms("histogram_probS_noSmearing_1fakeBJet_background",
-      histogram_probS_noSmearing_fakeLeadBJet_background, 
-      histogram_probS_noSmearing_fakeSubleadBJet_background, 
-      histogram_probS_noSmearing_2fakeBJets_background);
+    TH1* histogram_probS_noSmearing_geq1fakeBJet_background = addHistograms("histogram_probS_noSmearing_geq1fakeBJet_background",
+      histogram_probS_noSmearing_1genuineBJet_background, 
+      histogram_probS_noSmearing_0genuineBJets_background);
 
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
       histogram_probS_noSmearing_2genuineBJets_background, "2 genuine b-jets",
-      histogram_probS_noSmearing_1fakeBJet_background, "#geq 1 fake b-jet",
+      histogram_probS_noSmearing_geq1fakeBJet_background, "#geq 1 fake b-jet",
       nullptr, "",
       nullptr, "",
       showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
@@ -1523,9 +1513,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
       histogram_probS_noSmearing_2genuineBJets_background, "2 genuine b-jets",
-      histogram_probS_noSmearing_fakeLeadBJet_background, "fake lead. b-jet",
-      histogram_probS_noSmearing_fakeSubleadBJet_background, "fake sublead. b-jet",
-      histogram_probS_noSmearing_2fakeBJets_background, "2 fake b-jets",
+      histogram_probS_noSmearing_1genuineBJet_background, "1 genuine + 1 fake b-jet",
+      histogram_probS_noSmearing_0genuineBJets_background, "2 fake b-jets",
+      nullptr, "",
       showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
       showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
       0.045, 0.25, 0.69, 0.28, 0.23, showHistograms_legendOptions,
@@ -1533,12 +1523,12 @@ void makeMEMPerformancePlots_bbww_dilepton()
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_probS, xMin_probS, xMax_probS, "log w_{0}", showHistograms_xAxisOffset,
       true, yMin_probS, yMax_probS, "dN/dlog w_{0}", showHistograms_yAxisOffset,
-      "hh_bbwwMEM_dilepton_effectOfFakes_4histograms_probS_background.pdf");
+      "hh_bbwwMEM_dilepton_effectOfFakes_3histograms_probS_background.pdf");
 
     TH1* histogram_probS_missingBJet_noSmearing_genuineBJet_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[false], kBackground_lo, histogramNames[kProbSignal]);
+      directories_part1[false][false], directories_part2_missingBJet[1], kBackground_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_missingBJet_noSmearing_fakeBJet_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[true], kBackground_lo, histogramNames[kProbSignal]);
+      directories_part1[false][false], directories_part2_missingBJet[0], kBackground_lo, histogramNames[kProbSignal]);
 
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
@@ -1556,23 +1546,20 @@ void makeMEMPerformancePlots_bbww_dilepton()
       "hh_bbwwMEM_dilepton_effectOfFakes_probS_missingBJet_background.pdf");
 
     TH1* histogram_probB_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kBackground_lo, histogramNames[kProbBackground]);
-    TH1* histogram_probB_noSmearing_fakeLeadBJet_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[true][false], kBackground_lo, histogramNames[kProbBackground]);
-    TH1* histogram_probB_noSmearing_fakeSubleadBJet_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][true], kBackground_lo, histogramNames[kProbBackground]);
-    TH1* histogram_probB_noSmearing_2fakeBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[true][true], kBackground_lo, histogramNames[kProbBackground]);
+      directories_part1[false][false], directories_part2[2], kBackground_lo, histogramNames[kProbBackground]);
+    TH1* histogram_probB_noSmearing_1genuineBJet_background = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[1], kBackground_lo, histogramNames[kProbBackground]);
+    TH1* histogram_probB_noSmearing_0genuineBJets_background = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[0], kBackground_lo, histogramNames[kProbBackground]);
   
-    TH1* histogram_probB_noSmearing_1fakeBJet_background = addHistograms("histogram_probB_noSmearing_1fakeBJet_background",
-      histogram_probB_noSmearing_fakeLeadBJet_background, 
-      histogram_probB_noSmearing_fakeSubleadBJet_background, 
-      histogram_probB_noSmearing_2fakeBJets_background);
+    TH1* histogram_probB_noSmearing_geq1fakeBJet_background = addHistograms("histogram_probB_noSmearing_geq1fakeBJet_background",
+      histogram_probB_noSmearing_1genuineBJet_background, 
+      histogram_probB_noSmearing_0genuineBJets_background);
 
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
       histogram_probB_noSmearing_2genuineBJets_background, "2 genuine b-jets",
-      histogram_probB_noSmearing_1fakeBJet_background, "#geq 1 fake b-jet",
+      histogram_probB_noSmearing_geq1fakeBJet_background, "#geq 1 fake b-jet",
       nullptr, "",
       nullptr, "",
       showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
@@ -1586,9 +1573,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
       histogram_probB_noSmearing_2genuineBJets_background, "2 genuine b-jets",
-      histogram_probB_noSmearing_fakeLeadBJet_background, "fake lead. b-jet",
-      histogram_probB_noSmearing_fakeSubleadBJet_background, "fake sublead. b-jet",
-      histogram_probB_noSmearing_2fakeBJets_background, "2 fake b-jets",
+      histogram_probB_noSmearing_1genuineBJet_background, "1 genuine + 1 fake b-jet",
+      histogram_probB_noSmearing_0genuineBJets_background, "2 fake b-jets",
+      nullptr, "",
       showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
       showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
       0.045, 0.25, 0.69, 0.28, 0.23, showHistograms_legendOptions,
@@ -1596,12 +1583,12 @@ void makeMEMPerformancePlots_bbww_dilepton()
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_probB, xMin_probB, xMax_probB, "log w_{1}",showHistograms_xAxisOffset,
       true, yMin_probB, yMax_probB, "dN/dlog w_{1}", showHistograms_yAxisOffset,
-      "hh_bbwwMEM_dilepton_effectOfFakes_4histograms_probB_background.pdf");
+      "hh_bbwwMEM_dilepton_effectOfFakes_3histograms_probB_background.pdf");
 
     TH1* histogram_probB_missingBJet_noSmearing_genuineBJet_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[false], kBackground_lo, histogramNames[kProbBackground]);
+      directories_part1[false][false], directories_part2_missingBJet[1], kBackground_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_missingBJet_noSmearing_fakeBJet_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[true], kBackground_lo, histogramNames[kProbBackground]);
+      directories_part1[false][false], directories_part2_missingBJet[0], kBackground_lo, histogramNames[kProbBackground]);
 
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
@@ -1621,23 +1608,20 @@ void makeMEMPerformancePlots_bbww_dilepton()
   
     //-------------------------------------------------------------------------------------------------
     TH1* histogram_memLR_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kSignal_lo, histogramNames[kLR]);
-    TH1* histogram_memLR_noSmearing_fakeLeadBJet_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[true][false], kSignal_lo, histogramNames[kLR]);
-    TH1* histogram_memLR_noSmearing_fakeSubleadBJet_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][true], kSignal_lo, histogramNames[kLR]);
-    TH1* histogram_memLR_noSmearing_2fakeBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[true][true], kSignal_lo, histogramNames[kLR]);
+      directories_part1[false][false], directories_part2[2], kSignal_lo, histogramNames[kLR]);
+    TH1* histogram_memLR_noSmearing_1genuineBJet_signal = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[1], kSignal_lo, histogramNames[kLR]);
+    TH1* histogram_memLR_noSmearing_0genuineBJets_signal = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[0], kSignal_lo, histogramNames[kLR]);
   
-    TH1* histogram_memLR_noSmearing_1fakeBJet_signal = addHistograms("histogram_memLR_noSmearing_1fakeBJet_signal",
-      histogram_memLR_noSmearing_fakeLeadBJet_signal, 
-      histogram_memLR_noSmearing_fakeSubleadBJet_signal, 
-      histogram_memLR_noSmearing_2fakeBJets_signal);
+    TH1* histogram_memLR_noSmearing_geq1fakeBJet_signal = addHistograms("histogram_memLR_noSmearing_geq1fakeBJet_signal",
+      histogram_memLR_noSmearing_1genuineBJet_signal, 
+      histogram_memLR_noSmearing_0genuineBJets_signal);
 
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
       histogram_memLR_noSmearing_2genuineBJets_signal, "2 genuine b-jets",
-      histogram_memLR_noSmearing_1fakeBJet_signal, "#geq 1 fake b-jet",
+      histogram_memLR_noSmearing_geq1fakeBJet_signal, "#geq 1 fake b-jet",
       nullptr, "",
       nullptr, "",
       showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
@@ -1651,9 +1635,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
       histogram_memLR_noSmearing_2genuineBJets_signal, "2 genuine b-jets",
-      histogram_memLR_noSmearing_fakeLeadBJet_signal, "fake lead. b-jet",
-      histogram_memLR_noSmearing_fakeSubleadBJet_signal, "fake sublead. b-jet",
-      histogram_memLR_noSmearing_2fakeBJets_signal, "2 fake b-jets",
+      histogram_memLR_noSmearing_1genuineBJet_signal, "1 genuine + 1 fake b-jet",
+      histogram_memLR_noSmearing_0genuineBJets_signal, "2 fake b-jets",
+      nullptr, "",
       showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
       showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
       0.045, 0.40, 0.69, 0.28, 0.23, showHistograms_legendOptions,
@@ -1661,26 +1645,23 @@ void makeMEMPerformancePlots_bbww_dilepton()
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_memLR, xMin_memLR, xMax_memLR, "P", showHistograms_xAxisOffset,
       true, yMin_memLR, yMax_memLR, "dN/dP", showHistograms_yAxisOffset,
-      "hh_bbwwMEM_dilepton_effectOfFakes_4histograms_memLR_signal.pdf");
+      "hh_bbwwMEM_dilepton_effectOfFakes_3histograms_memLR_signal.pdf");
 
     TH1* histogram_memLR_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kBackground_lo, histogramNames[kLR]);
-    TH1* histogram_memLR_noSmearing_fakeLeadBJet_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[true][false], kBackground_lo, histogramNames[kLR]);
-    TH1* histogram_memLR_noSmearing_fakeSubleadBJet_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][true], kBackground_lo, histogramNames[kLR]);
-    TH1* histogram_memLR_noSmearing_2fakeBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[true][true], kBackground_lo, histogramNames[kLR]);
+      directories_part1[false][false], directories_part2[2], kBackground_lo, histogramNames[kLR]);
+    TH1* histogram_memLR_noSmearing_1genuineBJet_background = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[1], kBackground_lo, histogramNames[kLR]);
+    TH1* histogram_memLR_noSmearing_0genuineBJets_background = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2[0], kBackground_lo, histogramNames[kLR]);
   
-    TH1* histogram_memLR_noSmearing_1fakeBJet_background = addHistograms("histogram_memLR_noSmearing_1fakeBJet_background",
-      histogram_memLR_noSmearing_fakeLeadBJet_background, 
-      histogram_memLR_noSmearing_fakeSubleadBJet_background, 
-      histogram_memLR_noSmearing_2fakeBJets_background);
+    TH1* histogram_memLR_noSmearing_geq1fakeBJet_background = addHistograms("histogram_memLR_noSmearing_geq1fakeBJet_background",
+      histogram_memLR_noSmearing_1genuineBJet_background, 
+      histogram_memLR_noSmearing_0genuineBJets_background);
 
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
       histogram_memLR_noSmearing_2genuineBJets_background, "2 genuine b-jets",
-      histogram_memLR_noSmearing_1fakeBJet_background, "#geq 1 fake b-jet",
+      histogram_memLR_noSmearing_geq1fakeBJet_background, "#geq 1 fake b-jet",
       nullptr, "",
       nullptr, "",
       showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
@@ -1694,9 +1675,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
       histogram_memLR_noSmearing_2genuineBJets_background, "2 genuine b-jets",
-      histogram_memLR_noSmearing_fakeLeadBJet_background, "fake lead. b-jet",
-      histogram_memLR_noSmearing_fakeSubleadBJet_background, "fake sublead. b-jet",
-      histogram_memLR_noSmearing_2fakeBJets_background, "2 fake b-jets",
+      histogram_memLR_noSmearing_1genuineBJet_background, "1 genuine + 1 fake b-jet",
+      histogram_memLR_noSmearing_0genuineBJets_background, "2 fake b-jets",
+      nullptr, "",
       showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
       showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
       0.045, 0.40, 0.69, 0.28, 0.23, showHistograms_legendOptions,
@@ -1704,24 +1685,22 @@ void makeMEMPerformancePlots_bbww_dilepton()
       0.1800, 0.9525, 0.2900, 0.0900,
       numBinsX_memLR, xMin_memLR, xMax_memLR, "P", showHistograms_xAxisOffset,
       true, yMin_memLR, yMax_memLR, "dN/dP", showHistograms_yAxisOffset,
-      "hh_bbwwMEM_dilepton_effectOfFakes_4histograms_memLR_background.pdf");
+      "hh_bbwwMEM_dilepton_effectOfFakes_3histograms_memLR_background.pdf");
 
     TGraph* graph_ROC_noSmearing_2genuineBJets_logScale = compGraphROC("graph_ROC_noSmearing_2genuineBJets",
       histogram_memLR_noSmearing_2genuineBJets_signal, histogram_memLR_noSmearing_2genuineBJets_background, true);
-    TGraph* graph_ROC_noSmearing_fakeLeadBJet_logScale = compGraphROC("graph_ROC_noSmearing_fakeLeadBJet",
-      histogram_memLR_noSmearing_fakeLeadBJet_signal, histogram_memLR_noSmearing_fakeLeadBJet_background, true);
-    TGraph* graph_ROC_noSmearing_fakeSubleadBJet_logScale = compGraphROC("graph_ROC_noSmearing_fakeSubleadBJet",
-      histogram_memLR_noSmearing_fakeSubleadBJet_signal, histogram_memLR_noSmearing_fakeSubleadBJet_background, true);
-    TGraph* graph_ROC_noSmearing_2fakeBJets_logScale = compGraphROC("graph_ROC_noSmearing_2fakeBJets",
-      histogram_memLR_noSmearing_2fakeBJets_signal, histogram_memLR_noSmearing_2fakeBJets_background, true);
+    TGraph* graph_ROC_noSmearing_1genuineBJet_logScale = compGraphROC("graph_ROC_noSmearing_1genuineBJet",
+      histogram_memLR_noSmearing_1genuineBJet_signal, histogram_memLR_noSmearing_1genuineBJet_background, true);
+    TGraph* graph_ROC_noSmearing_0genuineBJets_logScale = compGraphROC("graph_ROC_noSmearing_0genuineBJets",
+      histogram_memLR_noSmearing_0genuineBJets_signal, histogram_memLR_noSmearing_0genuineBJets_background, true);
 
-    TGraph* graph_ROC_noSmearing_1fakeBJet_logScale = compGraphROC("graph_ROC_noSmearing_",
-      histogram_memLR_noSmearing_1fakeBJet_signal, histogram_memLR_noSmearing_1fakeBJet_background, true);
+    TGraph* graph_ROC_noSmearing_geq1fakeBJet_logScale = compGraphROC("graph_ROC_noSmearing_geq1fakeBJet",
+      histogram_memLR_noSmearing_geq1fakeBJet_signal, histogram_memLR_noSmearing_geq1fakeBJet_background, true);
 
     showGraphs(
       showGraphs_canvasSizeX, showGraphs_canvasSizeY,
       graph_ROC_noSmearing_2genuineBJets_logScale, "2 genuine b-jets",
-      graph_ROC_noSmearing_1fakeBJet_logScale, "#geq 1 fake b-jet",
+      graph_ROC_noSmearing_geq1fakeBJet_logScale, "#geq 1 fake b-jet",
       nullptr, "",
       nullptr, "",
       showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, 
@@ -1735,9 +1714,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
     showGraphs(
       showGraphs_canvasSizeX, showGraphs_canvasSizeY,
       graph_ROC_noSmearing_2genuineBJets_logScale, "2 genuine b-jets",
-      graph_ROC_noSmearing_fakeLeadBJet_logScale, "fake lead. b-jet",
-      graph_ROC_noSmearing_fakeSubleadBJet_logScale, "fake sublead. b-jet",
-      graph_ROC_noSmearing_2fakeBJets_logScale, "2 fake b-jets",
+      graph_ROC_noSmearing_1genuineBJet_logScale, "1 genuine + 1 fake b-jet",
+      graph_ROC_noSmearing_0genuineBJets_logScale, "2 fake b-jets",
+      nullptr, "",
       showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, 
       showGraphs_lineStyles, showGraphs_lineWidths, showGraphs_drawOptions,
       0.045, 0.23, 0.66, 0.33, 0.28, showGraphs_legendOptions,
@@ -1745,12 +1724,12 @@ void makeMEMPerformancePlots_bbww_dilepton()
       0.1600, 0.9525, 0.2900, 0.0600,
       10, 0., 1.01, "Signal Efficiency", showGraphs_xAxisOffset,
       true, 2.1e-4, 9.9e0, "Background Rate", showGraphs_yAxisOffset, 
-      "hh_bbwwMEM_dilepton_effectOfFakes_4graphs_ROC.pdf");
+      "hh_bbwwMEM_dilepton_effectOfFakes_3graphs_ROC.pdf");
 
     TH1* histogram_memLR_missingBJet_noSmearing_genuineBJet_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[false], kSignal_lo, histogramNames[kLR]);
+      directories_part1[false][false], directories_part2_missingBJet[1], kSignal_lo, histogramNames[kLR]);
     TH1* histogram_memLR_missingBJet_noSmearing_fakeBJet_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[true], kSignal_lo, histogramNames[kLR]);
+      directories_part1[false][false], directories_part2_missingBJet[0], kSignal_lo, histogramNames[kLR]);
 
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
@@ -1768,9 +1747,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
       "hh_bbwwMEM_dilepton_effectOfFakes_memLR_missingBJet_signal.pdf");
 
     TH1* histogram_memLR_missingBJet_noSmearing_genuineBJet_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[false], kBackground_lo, histogramNames[kLR]);
+      directories_part1[false][false], directories_part2_missingBJet[1], kBackground_lo, histogramNames[kLR]);
     TH1* histogram_memLR_missingBJet_noSmearing_fakeBJet_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[true], kBackground_lo, histogramNames[kLR]);
+      directories_part1[false][false], directories_part2_missingBJet[0], kBackground_lo, histogramNames[kLR]);
 
     showHistograms(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY,
@@ -1829,13 +1808,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
   if ( makePlots_effectOfSmearing ) {
     //-------------------------------------------------------------------------------------------------
     TH1* histogram_probS_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kSignal_lo, histogramNames[kProbSignal]);
+      directories_part1[false][false], directories_part2[2], kSignal_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_jetSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[true][false], directories_part2[false][false], kSignal_lo, histogramNames[kProbSignal]);
+      directories_part1[true][false], directories_part2[2], kSignal_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_metSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][true], directories_part2[false][false], kSignal_lo, histogramNames[kProbSignal]);
+      directories_part1[false][true], directories_part2[2], kSignal_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_jet_and_metSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[true][true], directories_part2[false][false], kSignal_lo, histogramNames[kProbSignal]);
+      directories_part1[true][true], directories_part2[2], kSignal_lo, histogramNames[kProbSignal]);
   
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
@@ -1855,13 +1834,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
       "hh_bbwwMEM_dilepton_effectOfSmearing_probS_signal.pdf");
 
     TH1* histogram_probS_missingBJet_noSmearing_genuineBJet_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[false], kSignal_lo, histogramNames[kProbSignal]);
+      directories_part1[false][false], directories_part2_missingBJet[1], kSignal_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_missingBJet_jetSmearing_genuineBJet_signal = loadHistogram(inputFile, 
-      directories_part1[true][false], directories_part2_missingBJet[false], kSignal_lo, histogramNames[kProbSignal]);
+      directories_part1[true][false], directories_part2_missingBJet[1], kSignal_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_missingBJet_metSmearing_genuineBJet_signal = loadHistogram(inputFile, 
-      directories_part1[false][true], directories_part2_missingBJet[false], kSignal_lo, histogramNames[kProbSignal]);
+      directories_part1[false][true], directories_part2_missingBJet[1], kSignal_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_missingBJet_jet_and_metSmearing_genuineBJet_signal = loadHistogram(inputFile, 
-      directories_part1[true][true], directories_part2_missingBJet[false], kSignal_lo, histogramNames[kProbSignal]);
+      directories_part1[true][true], directories_part2_missingBJet[1], kSignal_lo, histogramNames[kProbSignal]);
     
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
@@ -1881,13 +1860,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
       "hh_bbwwMEM_dilepton_effectOfSmearing_probS_missingBJet_signal.pdf");
 
     TH1* histogram_probB_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kSignal_lo, histogramNames[kProbBackground]);
+      directories_part1[false][false], directories_part2[2], kSignal_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_jetSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[true][false], directories_part2[false][false], kSignal_lo, histogramNames[kProbBackground]);
+      directories_part1[true][false], directories_part2[2], kSignal_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_metSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][true], directories_part2[false][false], kSignal_lo, histogramNames[kProbBackground]);
+      directories_part1[false][true], directories_part2[2], kSignal_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_jet_and_metSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[true][true], directories_part2[false][false], kSignal_lo, histogramNames[kProbBackground]);
+      directories_part1[true][true], directories_part2[2], kSignal_lo, histogramNames[kProbBackground]);
   
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
@@ -1907,13 +1886,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
       "hh_bbwwMEM_dilepton_effectOfSmearing_probB_signal.pdf");
 
     TH1* histogram_probB_missingBJet_noSmearing_genuineBJet_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[false], kSignal_lo, histogramNames[kProbBackground]);
+      directories_part1[false][false], directories_part2_missingBJet[1], kSignal_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_missingBJet_jetSmearing_genuineBJet_signal = loadHistogram(inputFile, 
-      directories_part1[true][false], directories_part2_missingBJet[false], kSignal_lo, histogramNames[kProbBackground]);
+      directories_part1[true][false], directories_part2_missingBJet[1], kSignal_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_missingBJet_metSmearing_genuineBJet_signal = loadHistogram(inputFile, 
-      directories_part1[false][true], directories_part2_missingBJet[false], kSignal_lo, histogramNames[kProbBackground]);
+      directories_part1[false][true], directories_part2_missingBJet[1], kSignal_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_missingBJet_jet_and_metSmearing_genuineBJet_signal = loadHistogram(inputFile, 
-      directories_part1[true][true], directories_part2_missingBJet[false], kSignal_lo, histogramNames[kProbBackground]);
+      directories_part1[true][true], directories_part2_missingBJet[1], kSignal_lo, histogramNames[kProbBackground]);
     
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
@@ -1935,13 +1914,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
 
     //-------------------------------------------------------------------------------------------------
     TH1* histogram_probS_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kBackground_lo, histogramNames[kProbSignal]);
+      directories_part1[false][false], directories_part2[2], kBackground_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_jetSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[true][false], directories_part2[false][false], kBackground_lo, histogramNames[kProbSignal]);
+      directories_part1[true][false], directories_part2[2], kBackground_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_metSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][true], directories_part2[false][false], kBackground_lo, histogramNames[kProbSignal]);
+      directories_part1[false][true], directories_part2[2], kBackground_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_jet_and_metSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[true][true], directories_part2[false][false], kBackground_lo, histogramNames[kProbSignal]);
+      directories_part1[true][true], directories_part2[2], kBackground_lo, histogramNames[kProbSignal]);
   
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
@@ -1961,13 +1940,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
       "hh_bbwwMEM_dilepton_effectOfSmearing_probS_background.pdf");
     
     TH1* histogram_probS_missingBJet_noSmearing_genuineBJet_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[false], kBackground_lo, histogramNames[kProbSignal]);
+      directories_part1[false][false], directories_part2_missingBJet[1], kBackground_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_missingBJet_jetSmearing_genuineBJet_background = loadHistogram(inputFile, 
-      directories_part1[true][false], directories_part2_missingBJet[false], kBackground_lo, histogramNames[kProbSignal]);
+      directories_part1[true][false], directories_part2_missingBJet[1], kBackground_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_missingBJet_metSmearing_genuineBJet_background = loadHistogram(inputFile, 
-      directories_part1[false][true], directories_part2_missingBJet[false], kBackground_lo, histogramNames[kProbSignal]);
+      directories_part1[false][true], directories_part2_missingBJet[1], kBackground_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_missingBJet_jet_and_metSmearing_genuineBJet_background = loadHistogram(inputFile, 
-      directories_part1[true][true], directories_part2_missingBJet[false], kBackground_lo, histogramNames[kProbSignal]);
+      directories_part1[true][true], directories_part2_missingBJet[1], kBackground_lo, histogramNames[kProbSignal]);
     
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
@@ -1987,13 +1966,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
       "hh_bbwwMEM_dilepton_effectOfSmearing_probS_missingBJet_background.pdf");
 
     TH1* histogram_probB_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kBackground_lo, histogramNames[kProbBackground]);
+      directories_part1[false][false], directories_part2[2], kBackground_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_jetSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[true][false], directories_part2[false][false], kBackground_lo, histogramNames[kProbBackground]);
+      directories_part1[true][false], directories_part2[2], kBackground_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_metSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][true], directories_part2[false][false], kBackground_lo, histogramNames[kProbBackground]);
+      directories_part1[false][true], directories_part2[2], kBackground_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_jet_and_metSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[true][true], directories_part2[false][false], kBackground_lo, histogramNames[kProbBackground]);
+      directories_part1[true][true], directories_part2[2], kBackground_lo, histogramNames[kProbBackground]);
   
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
@@ -2013,13 +1992,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
       "hh_bbwwMEM_dilepton_effectOfSmearing_probB_background.pdf");
 
     TH1* histogram_probB_missingBJet_noSmearing_genuineBJet_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[false], kBackground_lo, histogramNames[kProbBackground]);
+      directories_part1[false][false], directories_part2_missingBJet[1], kBackground_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_missingBJet_jetSmearing_genuineBJet_background = loadHistogram(inputFile, 
-      directories_part1[true][false], directories_part2_missingBJet[false], kBackground_lo, histogramNames[kProbBackground]);
+      directories_part1[true][false], directories_part2_missingBJet[1], kBackground_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_missingBJet_metSmearing_genuineBJet_background = loadHistogram(inputFile, 
-      directories_part1[false][true], directories_part2_missingBJet[false], kBackground_lo, histogramNames[kProbBackground]);
+      directories_part1[false][true], directories_part2_missingBJet[1], kBackground_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_missingBJet_jet_and_metSmearing_genuineBJet_background = loadHistogram(inputFile, 
-      directories_part1[true][true], directories_part2_missingBJet[false], kBackground_lo, histogramNames[kProbBackground]);
+      directories_part1[true][true], directories_part2_missingBJet[1], kBackground_lo, histogramNames[kProbBackground]);
     
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
@@ -2041,13 +2020,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
 
     //-------------------------------------------------------------------------------------------------
     TH1* histogram_memLR_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kSignal_lo, histogramNames[kLR]);
+      directories_part1[false][false], directories_part2[2], kSignal_lo, histogramNames[kLR]);
     TH1* histogram_memLR_jetSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[true][false], directories_part2[false][false], kSignal_lo, histogramNames[kLR]);
+      directories_part1[true][false], directories_part2[2], kSignal_lo, histogramNames[kLR]);
     TH1* histogram_memLR_metSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][true], directories_part2[false][false], kSignal_lo, histogramNames[kLR]);
+      directories_part1[false][true], directories_part2[2], kSignal_lo, histogramNames[kLR]);
     TH1* histogram_memLR_jet_and_metSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[true][true], directories_part2[false][false], kSignal_lo, histogramNames[kLR]);
+      directories_part1[true][true], directories_part2[2], kSignal_lo, histogramNames[kLR]);
   
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
@@ -2067,13 +2046,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
       "hh_bbwwMEM_dilepton_effectOfSmearing_memLR_signal.pdf");
 
     TH1* histogram_memLR_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kBackground_lo, histogramNames[kLR]);
+      directories_part1[false][false], directories_part2[2], kBackground_lo, histogramNames[kLR]);
     TH1* histogram_memLR_jetSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[true][false], directories_part2[false][false], kBackground_lo, histogramNames[kLR]);
+      directories_part1[true][false], directories_part2[2], kBackground_lo, histogramNames[kLR]);
     TH1* histogram_memLR_metSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][true], directories_part2[false][false], kBackground_lo, histogramNames[kLR]);
+      directories_part1[false][true], directories_part2[2], kBackground_lo, histogramNames[kLR]);
     TH1* histogram_memLR_jet_and_metSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[true][true], directories_part2[false][false], kBackground_lo, histogramNames[kLR]);
+      directories_part1[true][true], directories_part2[2], kBackground_lo, histogramNames[kLR]);
   
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
@@ -2118,21 +2097,21 @@ void makeMEMPerformancePlots_bbww_dilepton()
       true, 2.1e-4, 9.9e0, 1. - 0.29, 1. + 0.29, "Background Rate", showGraphs_yAxisOffset_wRatio, 
       "hh_bbwwMEM_dilepton_effectOfSmearing_ROC.pdf");
 
-    TH1* histogram_memLR_missingBJet_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[false], kSignal_lo, histogramNames[kLR]);
-    TH1* histogram_memLR_missingBJet_jetSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[true][false], directories_part2_missingBJet[false], kSignal_lo, histogramNames[kLR]);
-    TH1* histogram_memLR_missingBJet_metSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[false][true], directories_part2_missingBJet[false], kSignal_lo, histogramNames[kLR]);
-    TH1* histogram_memLR_missingBJet_jet_and_metSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-      directories_part1[true][true], directories_part2_missingBJet[false], kSignal_lo, histogramNames[kLR]);
+    TH1* histogram_memLR_missingBJet_noSmearing_genuineBJet_signal = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2_missingBJet[1], kSignal_lo, histogramNames[kLR]);
+    TH1* histogram_memLR_missingBJet_jetSmearing_genuineBJet_signal = loadHistogram(inputFile, 
+      directories_part1[true][false], directories_part2_missingBJet[1], kSignal_lo, histogramNames[kLR]);
+    TH1* histogram_memLR_missingBJet_metSmearing_genuineBJet_signal = loadHistogram(inputFile, 
+      directories_part1[false][true], directories_part2_missingBJet[1], kSignal_lo, histogramNames[kLR]);
+    TH1* histogram_memLR_missingBJet_jet_and_metSmearing_genuineBJet_signal = loadHistogram(inputFile, 
+      directories_part1[true][true], directories_part2_missingBJet[1], kSignal_lo, histogramNames[kLR]);
   
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
-      histogram_memLR_missingBJet_noSmearing_2genuineBJets_signal, "MC truth",
-      histogram_memLR_missingBJet_jetSmearing_2genuineBJets_signal, "E_{b} smearing",
-      histogram_memLR_missingBJet_metSmearing_2genuineBJets_signal, "#rho smearing",
-      //histogram_memLR_missingBJet_jet_and_metSmearing_2genuineBJets_signal, "E_{b} + #rho smearing",
+      histogram_memLR_missingBJet_noSmearing_genuineBJet_signal, "MC truth",
+      histogram_memLR_missingBJet_jetSmearing_genuineBJet_signal, "E_{b} smearing",
+      histogram_memLR_missingBJet_metSmearing_genuineBJet_signal, "#rho smearing",
+      //histogram_memLR_missingBJet_jet_and_metSmearing_genuineBJet_signal, "E_{b} + #rho smearing",
       nullptr, "", 
       showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
       showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
@@ -2144,21 +2123,21 @@ void makeMEMPerformancePlots_bbww_dilepton()
       true, yMin_memLR_wRatio, yMax_memLR, 1. - 0.29, 1. + 0.29, "dN/dP_{m}", showHistograms_yAxisOffset_wRatio,
       "hh_bbwwMEM_dilepton_effectOfSmearing_memLR_missingBJet_signal.pdf");
 
-    TH1* histogram_memLR_missingBJet_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2_missingBJet[false], kBackground_lo, histogramNames[kLR]);
-    TH1* histogram_memLR_missingBJet_jetSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[true][false], directories_part2_missingBJet[false], kBackground_lo, histogramNames[kLR]);
-    TH1* histogram_memLR_missingBJet_metSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[false][true], directories_part2_missingBJet[false], kBackground_lo, histogramNames[kLR]);
-    TH1* histogram_memLR_missingBJet_jet_and_metSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-      directories_part1[true][true], directories_part2_missingBJet[false], kBackground_lo, histogramNames[kLR]);
+    TH1* histogram_memLR_missingBJet_noSmearing_genuineBJet_background = loadHistogram(inputFile, 
+      directories_part1[false][false], directories_part2_missingBJet[1], kBackground_lo, histogramNames[kLR]);
+    TH1* histogram_memLR_missingBJet_jetSmearing_genuineBJet_background = loadHistogram(inputFile, 
+      directories_part1[true][false], directories_part2_missingBJet[1], kBackground_lo, histogramNames[kLR]);
+    TH1* histogram_memLR_missingBJet_metSmearing_genuineBJet_background = loadHistogram(inputFile, 
+      directories_part1[false][true], directories_part2_missingBJet[1], kBackground_lo, histogramNames[kLR]);
+    TH1* histogram_memLR_missingBJet_jet_and_metSmearing_genuineBJet_background = loadHistogram(inputFile, 
+      directories_part1[true][true], directories_part2_missingBJet[1], kBackground_lo, histogramNames[kLR]);
   
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
-      histogram_memLR_missingBJet_noSmearing_2genuineBJets_background, "MC truth",
-      histogram_memLR_missingBJet_jetSmearing_2genuineBJets_background, "E_{b} smearing",
-      histogram_memLR_missingBJet_metSmearing_2genuineBJets_background, "#rho smearing",
-      //histogram_memLR_missingBJet_jet_and_metSmearing_2genuineBJets_background, "E_{b} + #rho smearing",
+      histogram_memLR_missingBJet_noSmearing_genuineBJet_background, "MC truth",
+      histogram_memLR_missingBJet_jetSmearing_genuineBJet_background, "E_{b} smearing",
+      histogram_memLR_missingBJet_metSmearing_genuineBJet_background, "#rho smearing",
+      //histogram_memLR_missingBJet_jet_and_metSmearing_genuineBJet_background, "E_{b} + #rho smearing",
       nullptr, "", 
       showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
       showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
@@ -2170,21 +2149,21 @@ void makeMEMPerformancePlots_bbww_dilepton()
       true, yMin_memLR_wRatio, yMax_memLR, 1. - 0.29, 1. + 0.29, "dN/dP_{m}", showHistograms_yAxisOffset_wRatio,
       "hh_bbwwMEM_dilepton_effectOfSmearing_memLR_missingBJet_background.pdf");
 
-    TGraph* graph_ROC_missingBJet_noSmearing_2genuineBJets_logScale = compGraphROC("graph_ROC_missingBJet_noSmearing_2genuineBJets",
-      histogram_memLR_missingBJet_noSmearing_2genuineBJets_signal, histogram_memLR_missingBJet_noSmearing_2genuineBJets_background, true);
-    TGraph* graph_ROC_missingBJet_jetSmearing_2genuineBJets_logScale = compGraphROC("graph_ROC_missingBJet_jetSmearing_2genuineBJets",
-      histogram_memLR_missingBJet_jetSmearing_2genuineBJets_signal, histogram_memLR_missingBJet_jetSmearing_2genuineBJets_background, true);
-    TGraph* graph_ROC_missingBJet_metSmearing_2genuineBJets_logScale = compGraphROC("graph_ROC_missingBJet_metSmearing_2genuineBJets",
-      histogram_memLR_missingBJet_metSmearing_2genuineBJets_signal, histogram_memLR_missingBJet_metSmearing_2genuineBJets_background, true);
-    TGraph* graph_ROC_missingBJet_jet_and_metSmearing_2genuineBJets_logScale = compGraphROC("graph_ROC_missingBJet_jet_and_metSmearing_2genuineBJets",
-      histogram_memLR_missingBJet_jet_and_metSmearing_2genuineBJets_signal, histogram_memLR_missingBJet_jet_and_metSmearing_2genuineBJets_background, true);
+    TGraph* graph_ROC_missingBJet_noSmearing_genuineBJet_logScale = compGraphROC("graph_ROC_missingBJet_noSmearing_genuineBJet",
+      histogram_memLR_missingBJet_noSmearing_genuineBJet_signal, histogram_memLR_missingBJet_noSmearing_genuineBJet_background, true);
+    TGraph* graph_ROC_missingBJet_jetSmearing_genuineBJet_logScale = compGraphROC("graph_ROC_missingBJet_jetSmearing_genuineBJet",
+      histogram_memLR_missingBJet_jetSmearing_genuineBJet_signal, histogram_memLR_missingBJet_jetSmearing_genuineBJet_background, true);
+    TGraph* graph_ROC_missingBJet_metSmearing_genuineBJet_logScale = compGraphROC("graph_ROC_missingBJet_metSmearing_genuineBJet",
+      histogram_memLR_missingBJet_metSmearing_genuineBJet_signal, histogram_memLR_missingBJet_metSmearing_genuineBJet_background, true);
+    TGraph* graph_ROC_missingBJet_jet_and_metSmearing_genuineBJet_logScale = compGraphROC("graph_ROC_missingBJet_jet_and_metSmearing_genuineBJet",
+      histogram_memLR_missingBJet_jet_and_metSmearing_genuineBJet_signal, histogram_memLR_missingBJet_jet_and_metSmearing_genuineBJet_background, true);
 
     showGraphs_wRatio(
       showGraphs_canvasSizeX, showGraphs_canvasSizeY_wRatio,
-      graph_ROC_missingBJet_noSmearing_2genuineBJets_logScale, "MC truth",
-      graph_ROC_missingBJet_jetSmearing_2genuineBJets_logScale, "E_{b} smearing",
-      graph_ROC_missingBJet_metSmearing_2genuineBJets_logScale, "#rho smearing",
-      //graph_ROC_missingBJet_jet_and_metSmearing_2genuineBJets_logScale, "E_{b} + #rho smearing",
+      graph_ROC_missingBJet_noSmearing_genuineBJet_logScale, "MC truth",
+      graph_ROC_missingBJet_jetSmearing_genuineBJet_logScale, "E_{b} smearing",
+      graph_ROC_missingBJet_metSmearing_genuineBJet_logScale, "#rho smearing",
+      //graph_ROC_missingBJet_jet_and_metSmearing_genuineBJet_logScale, "E_{b} + #rho smearing",
       nullptr, "",
       showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, 
       showGraphs_lineStyles, showGraphs_lineWidths, showGraphs_drawOptions,
@@ -2201,13 +2180,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
   if ( makePlots_effectOfHigherOrders ) {
     //-------------------------------------------------------------------------------------------------
     TH1* histogram_probS_lo_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kSignal_lo, histogramNames[kProbSignal]);
+      directories_part1[false][false], directories_part2[2], kSignal_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_nlo_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kSignal_nlo, histogramNames[kProbSignal]);
+      directories_part1[false][false], directories_part2[2], kSignal_nlo, histogramNames[kProbSignal]);
     TH1* histogram_probS_lo_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kBackground_lo, histogramNames[kProbSignal]);
+      directories_part1[false][false], directories_part2[2], kBackground_lo, histogramNames[kProbSignal]);
     TH1* histogram_probS_nlo_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kBackground_nlo, histogramNames[kProbSignal]);
+      directories_part1[false][false], directories_part2[2], kBackground_nlo, histogramNames[kProbSignal]);
 
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
@@ -2239,13 +2218,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
       "hh_bbwwMEM_dilepton_lo_vs_nlo_probS_background.pdf");
 
     TH1* histogram_probB_lo_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kSignal_lo, histogramNames[kProbBackground]);
+      directories_part1[false][false], directories_part2[2], kSignal_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_nlo_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kSignal_nlo, histogramNames[kProbBackground]);
+      directories_part1[false][false], directories_part2[2], kSignal_nlo, histogramNames[kProbBackground]);
     TH1* histogram_probB_lo_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kBackground_lo, histogramNames[kProbBackground]);
+      directories_part1[false][false], directories_part2[2], kBackground_lo, histogramNames[kProbBackground]);
     TH1* histogram_probB_nlo_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kBackground_nlo, histogramNames[kProbBackground]);
+      directories_part1[false][false], directories_part2[2], kBackground_nlo, histogramNames[kProbBackground]);
 
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
@@ -2277,13 +2256,13 @@ void makeMEMPerformancePlots_bbww_dilepton()
       "hh_bbwwMEM_dilepton_lo_vs_nlo_probB_background.pdf");
 
     TH1* histogram_memLR_lo_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kSignal_lo, histogramNames[kLR]);
+      directories_part1[false][false], directories_part2[2], kSignal_lo, histogramNames[kLR]);
     TH1* histogram_memLR_nlo_signal = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kSignal_nlo, histogramNames[kLR]);
+      directories_part1[false][false], directories_part2[2], kSignal_nlo, histogramNames[kLR]);
     TH1* histogram_memLR_lo_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kBackground_lo, histogramNames[kLR]);
+      directories_part1[false][false], directories_part2[2], kBackground_lo, histogramNames[kLR]);
     TH1* histogram_memLR_nlo_background = loadHistogram(inputFile, 
-      directories_part1[false][false], directories_part2[false][false], kBackground_nlo, histogramNames[kLR]);
+      directories_part1[false][false], directories_part2[2], kBackground_nlo, histogramNames[kLR]);
   
     showHistograms_wRatio(
       showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
