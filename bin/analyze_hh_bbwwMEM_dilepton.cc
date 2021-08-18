@@ -70,7 +70,7 @@ typedef std::vector<std::string> vstring;
 typedef std::vector<double> vdouble;
 
 /**
- * @brief Produce MEM performance plots for dilepton category of the HH->bbWW analysis.
+ * @brief Produce MEM performance plots for dilepton channel of the HH->bbWW analysis.
  */
 int main(int argc, char* argv[])
 {

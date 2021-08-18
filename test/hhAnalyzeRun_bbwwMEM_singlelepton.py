@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 import os, logging, sys, getpass
 from collections import OrderedDict as OD
-from hhAnalysis.bbwwMEMPerformanceStudies.configs.analyzeConfig_hh_bbwwMEM_dilepton import analyzeConfig_hh_bbwwMEM_dilepton
+from hhAnalysis.bbwwMEMPerformanceStudies.configs.analyzeConfig_hh_bbwwMEM_singlelepton import analyzeConfig_hh_bbwwMEM_singlelepton
 from tthAnalysis.HiggsToTauTau.jobTools import query_yes_no
 from tthAnalysis.HiggsToTauTau.analysisSettings import systematics, get_lumi
 from tthAnalysis.HiggsToTauTau.runConfig import tthAnalyzeParser, filter_samples
 
-# E.g.: ./hhAnalyzeRun_bbwwMEM_dilepton.py -v 2021May17 -e 2016
+# E.g.: ./hhAnalyzeRun_bbwwMEM_singlelepton.py -v 2021May17 -e 2016
 
 parser = tthAnalyzeParser()
 parser.add_rle_select()
@@ -31,7 +31,7 @@ files_per_job     = args.files_per_job
 use_home          = args.use_home
 
 if era == "2016":
-  from hhAnalysis.bbwwMEMPerformanceStudies.samples.hhAnalyzeSamples_dilepton_2016 import samples_2016 as samples
+  from hhAnalysis.bbwwMEMPerformanceStudies.samples.hhAnalyzeSamples_singlelepton_2016 import samples_2016 as samples
 else:
   print("Please use '2016' era, as the LO SM HH signal MC samples for the '2017' and '2018' eras are affected by a coupling bug!")
   print(" c.f. https://indico.cern.ch/event/996685/contributions/4251752/attachments/2198363/3717406/HH_bbWW_LOtoNLOreweighting_2021Mar01.pdf")
@@ -47,11 +47,11 @@ if __name__ == '__main__':
   if sample_filter:
     samples = filter_samples(samples, sample_filter)
 
-  analysis = analyzeConfig_hh_bbwwMEM_dilepton(
+  analysis = analyzeConfig_hh_bbwwMEM_singlelepton(
     configDir = os.path.join("/home",       getpass.getuser(), "hhAnalysis", era, version),
     outputDir = os.path.join("/hdfs/local", getpass.getuser(), "hhAnalysis", era, version),
-    executable_analyze                    = "analyze_hh_bbwwMEM_dilepton",
-    cfgFile_analyze                       = "analyze_hh_bbwwMEM_dilepton_cfg.py",
+    executable_analyze                    = "analyze_hh_bbwwMEM_singlelepton",
+    cfgFile_analyze                       = "analyze_hh_bbwwMEM_singlelepton_cfg.py",
     samples                               = samples,
     apply_jetSmearing_options             = [ True, False ],
     apply_metSmearing_options             = [ True, False ],

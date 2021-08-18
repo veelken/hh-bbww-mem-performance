@@ -1,5 +1,7 @@
 from hhAnalysis.bbww.samples.hhAnalyzeSamples_2016 import samples_2016
-
+#
+# Define MC samples to produce MEM performance plots for dilepton channel of the HH->bbWW analysis
+#
 for sample_name, sample_info in samples_2016.items():
   if sample_name == 'sum_events':
     continue

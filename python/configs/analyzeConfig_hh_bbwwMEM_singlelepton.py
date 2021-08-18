@@ -17,12 +17,12 @@ def getHistogramDir(category, apply_jetSmearing, apply_metSmearing):
     histogramDir += "_metSmearingDisabled"  
   return histogramDir
 
-class analyzeConfig_hh_bbwwMEM_dilepton(analyzeConfig_hh):
+class analyzeConfig_hh_bbwwMEM_singlelepton(analyzeConfig_hh):
   """Configuration metadata needed to run analysis in a single go.
 
   Sets up a folder structure by defining full path names; no directory creation is delegated here.
 
-  Args specific to analyzeConfig_hh_bbwwMEM_dilepton:
+  Args specific to analyzeConfig_hh_bbwwMEM_singlelepton:
     None.
 
   See $CMSSW_BASE/src/tthAnalysis/HiggsToTauTau/python/analyzeConfig.py
@@ -52,7 +52,7 @@ class analyzeConfig_hh_bbwwMEM_dilepton(analyzeConfig_hh):
       configDir             = configDir,
       outputDir             = outputDir,
       executable_analyze    = executable_analyze,
-      channel               = "hh_bbwwMEM_dilepton",
+      channel               = "hh_bbwwMEM_singlelepton",
       samples               = samples,
       jet_cleaning_by_index = False,
       gen_matching_by_index = False,
@@ -77,11 +77,11 @@ class analyzeConfig_hh_bbwwMEM_dilepton(analyzeConfig_hh):
     self.cfgFile_analyze = os.path.join(self.template_dir, cfgFile_analyze)
     self.select_rle_output = select_rle_output
     self.rle_select = rle_select
-    self.evtCategory_inclusive = "hh_bbwwMEM_dilepton"
+    self.evtCategory_inclusive = "hh_bbwwMEM_singlelepton"
     self.make_dependency_hadd_stage2 = "phony_hadd_stage1"
 
   def createCfg_analyze(self, jobOptions, sample_info):
-    """Create python configuration file for the analyze_hh_bbwwMEM_dilepton executable (analysis code)
+    """Create python configuration file for the analyze_hh_bbwwMEM_singlelepton executable (analysis code)
 
     Args:
       inputFiles: list of input files (Ntuples)
@@ -90,7 +90,7 @@ class analyzeConfig_hh_bbwwMEM_dilepton(analyzeConfig_hh):
     """
 
     jobOptions['histogramDir'] = getHistogramDir(self.evtCategory_inclusive, jobOptions['apply_jetSmearing'], jobOptions['apply_metSmearing'])
-    lines = super(analyzeConfig_hh_bbwwMEM_dilepton, self).createCfg_analyze(jobOptions, sample_info,
+    lines = super(analyzeConfig_hh_bbwwMEM_singlelepton, self).createCfg_analyze(jobOptions, sample_info,
       additionalJobOptions = [ "apply_jetSmearing", "apply_metSmearing", "maxSelEvents", "skipSelEvents" ])
     create_cfg(self.cfgFile_analyze, jobOptions['cfgFile_modified'], lines)
 
@@ -150,15 +150,17 @@ class analyzeConfig_hh_bbwwMEM_dilepton(analyzeConfig_hh):
 
           inputFileList = inputFileLists[sample_name]
           numJobsPerFile = None
-          if   sample_info["process_name_specific"] == "signal_ggf_nonresonant_node_sm_hh_2b2v":
+          if   sample_info["process_name_specific"] == "signal_ggf_nonresonant_node_sm_hh_2b2v_sl_PSWeights":
             numJobsPerFile = 500
-          elif sample_info["process_name_specific"] == "signal_ggf_nonresonant_cHHH1_hh_2b2v":
-            numJobsPerFile = 100
-          elif sample_info["process_name_specific"] == "TTJets_DiLept":
+          elif sample_info["process_name_specific"] == "signal_ggf_nonresonant_cHHH1_hh_2b2v_sl":
+            numJobsPerFile = 200
+          elif sample_info["process_name_specific"] == "TTJets_SingleLeptFromT" or \
+               sample_info["process_name_specific"] == "TTJets_SingleLeptFromTbar":
             numJobsPerFile = 50
-          elif sample_info["process_name_specific"] == "TTJets_DiLept_ext1":
+          elif sample_info["process_name_specific"] == "TTJets_SingleLeptFromT_ext1" or \
+               sample_info["process_name_specific"] == "TTJets_SingleLeptFromTbar_ext1":
             numJobsPerFile = 50
-          elif sample_info["process_name_specific"] == "TTTo2L2Nu": 
+          elif sample_info["process_name_specific"] == "TTToSemiLeptonic": 
             numJobsPerFile = 10
           else:
             raise ValueError("Invalid sample: %s" % sample_info["process_name_specific"])

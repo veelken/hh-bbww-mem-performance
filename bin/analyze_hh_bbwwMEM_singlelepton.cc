@@ -71,7 +71,7 @@ typedef std::vector<std::string> vstring;
 typedef std::vector<double> vdouble;
 
 /**
- * @brief Produce MEM performance plots for single-lepton category of the HH->bbWW analysis.
+ * @brief Produce MEM performance plots for single-lepton channel of the HH->bbWW analysis.
  */
 int main(int argc, char* argv[])
 {
@@ -453,7 +453,7 @@ int main(int argc, char* argv[])
 	printCollection("genBQuarksFromTop", genBQuarksFromTop);
         printCollection("genWJetsFromTop", genWJetsFromTop);
       }
-      if ( !(genLeptonsFromTop.size() == 2 && genNeutrinosFromTop.size() == 2 && genBQuarksFromTop.size() == 2 && genWJetsFromTop.size() == 2) ) {
+      if ( !(genLeptonsFromTop.size() == 1 && genNeutrinosFromTop.size() == 1 && genBQuarksFromTop.size() == 2 && genWJetsFromTop.size() == 2) ) {
 	if ( run_lumi_eventSelector ) {
 	  std::cout << "event " << eventInfo.str() << " FAILS generator-level selection." << std::endl;
 	  std::cout << "#genLeptonsFromTop = " << genLeptonsFromTop.size() << std::endl;
@@ -509,7 +509,8 @@ int main(int argc, char* argv[])
           genMEtPy += genLepton_and_NeutrinoFromWBosonMinus.second->p4().py();
           genHadWBoson = genWBosonPlus;
         }
-        assert(genLeptonsForMatching.size() == 1);
+        // CV: skip events for which matching of generator-level lepton+neutrino to W boson is ambiguous
+        if ( genLeptonsForMatching.size() != 1 ) continue;
         std::vector<GenJet> genWJets_tmp;
         for ( std::vector<GenParticle>::const_iterator genWJet = genWJets.begin();
               genWJet != genWJets.end(); ++genWJet ) {
@@ -813,8 +814,8 @@ int main(int argc, char* argv[])
       memMeasuredParticles_missingBJet.push_back(memMeasuredBJet_sublead);
       selGenBJet_isFake_missingBJet = selGenBJet_sublead_isFake;
     }
-    memMeasuredParticles.push_back(memMeasuredWJet_lead);
-    memMeasuredParticles.push_back(memMeasuredWJet_sublead);
+    memMeasuredParticles_missingBJet.push_back(memMeasuredWJet_lead);
+    memMeasuredParticles_missingBJet.push_back(memMeasuredWJet_sublead);
 
     std::vector<mem::MeasuredParticle> memMeasuredParticles_missingWJet;
     memMeasuredParticles_missingWJet.push_back(memMeasuredLepton);
