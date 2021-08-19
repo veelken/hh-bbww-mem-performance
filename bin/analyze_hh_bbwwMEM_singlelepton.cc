@@ -688,8 +688,8 @@ int main(int argc, char* argv[])
       }
       continue;
     }
-    cutFlowTable.update(">= 1 gen leptons", evtWeight);
-    cutFlowHistManager->fillHistograms(">= 1 gen leptons", evtWeight);
+    cutFlowTable.update(">= 1 gen lepton", evtWeight);
+    cutFlowHistManager->fillHistograms(">= 1 gen lepton", evtWeight);
     const GenLepton* selGenLepton = selGenLeptons[0];
     
     //const double minPt_lepton = ( TMath::Abs(selGenLepton->pdgId()) == 11 ) ? 32. : 25.;
