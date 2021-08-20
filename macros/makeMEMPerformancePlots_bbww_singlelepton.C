@@ -24,12 +24,13 @@ enum { kUndefined, kSignal_lo, kSignal_nlo, kBackground_lo, kBackground_nlo };
 
 enum { kProbSignal, kProbBackground, kLR };
 
-void getHistogramKey(int idxHistogram)
+std::string getHistogramKey(int idxHistogram)
 {
   if      ( idxHistogram == kProbSignal     ) return "probS";
   else if ( idxHistogram == kProbBackground ) return "probB";
   else if ( idxHistogram == kLR             ) return "memLR";
   else assert(0);
+  return "";
 }
 
 TH1* loadHistogram(TFile* inputFile, const std::string& directory_part1, const std::string& directory_part2, int signal_or_background, const std::string& histogramName)
@@ -1262,26 +1263,32 @@ void makeMEMPerformancePlots_bbww_singlelepton()
   std::vector<std::string> showHistograms_signal_vs_background_drawOptions = { "ep", "ep" };
   std::vector<std::string> showHistograms_signal_vs_background_legendOptions = { "p", "p" };
 
-  std::map<std::string, std::string> xAxisTitle;  // key = getHistogramKey(idxHistogram)
-  std::map<std::string, int>         numBinsX;    // key = getHistogramKey(idxHistogram)
-  std::map<std::string, double>      xMin;        // key = getHistogramKey(idxHistogram)
+  std::map<std::string, std::string> xAxisTitle;               // key = getHistogramKey(idxHistogram)
+  std::map<std::string, std::string> xAxisTitle_missingBJet;   // key = getHistogramKey(idxHistogram)
+  std::map<std::string, std::string> xAxisTitle_missingWJet;   // key = getHistogramKey(idxHistogram)
+  std::map<std::string, std::string> xAxisTitle_missingBnWJet; // key = getHistogramKey(idxHistogram)
+  std::map<std::string, int>         numBinsX;                 // key = getHistogramKey(idxHistogram)
+  std::map<std::string, double>      xMin;                     // key = getHistogramKey(idxHistogram)
   std::map<std::string, double>      xMax;
-  std::map<std::string, std::string> yAxisTitle;  // key = getHistogramKey(idxHistogram)
-  std::map<std::string, double>      yMin;        // key = getHistogramKey(idxHistogram)
-  std::map<std::string, double>      yMin_wRatio; // key = getHistogramKey(idxHistogram)
-  std::map<std::string, double>      yMax;        // key = getHistogramKey(idxHistogram)
+  std::map<std::string, std::string> yAxisTitle;               // key = getHistogramKey(idxHistogram)
+  std::map<std::string, std::string> yAxisTitle_missingBJet;   // key = getHistogramKey(idxHistogram)
+  std::map<std::string, std::string> yAxisTitle_missingWJet;   // key = getHistogramKey(idxHistogram)
+  std::map<std::string, std::string> yAxisTitle_missingBnWJet; // key = getHistogramKey(idxHistogram)
+  std::map<std::string, double>      yMin;                     // key = getHistogramKey(idxHistogram)
+  std::map<std::string, double>      yMin_wRatio;              // key = getHistogramKey(idxHistogram)
+  std::map<std::string, double>      yMax;                     // key = getHistogramKey(idxHistogram)
   
-  xAxisTitle["memLR"]               = "P"
-  xAxisTitle_missingBJet["memLR"]   = "P_{mB}"
-  xAxisTitle_missingWJet["memLR"]   = "P_{mW}"
-  xAxisTitle_missingBnWJet["memLR"] = "P_{mBW}"
+  xAxisTitle["memLR"]               = "P";
+  xAxisTitle_missingBJet["memLR"]   = "P_{mB}";
+  xAxisTitle_missingWJet["memLR"]   = "P_{mW}";
+  xAxisTitle_missingBnWJet["memLR"] = "P_{mBW}";
   numBinsX["memLR"]                 = 40;
   xMin["memLR"]                     = 0.;
   xMax["memLR"]                     = 1.;
-  yAxisTitle["memLR"]               = "dN/dP"
-  yAxisTitle_missingBJet["memLR"]   = "dN/dP_{mB}"
-  yAxisTitle_missingWJet["memLR"]   = "dN/dP_{mW}"
-  yAxisTitle_missingBnWJet["memLR"] = "dN/dP_{mBW}"
+  yAxisTitle["memLR"]               = "dN/dP";
+  yAxisTitle_missingBJet["memLR"]   = "dN/dP_{mB}";
+  yAxisTitle_missingWJet["memLR"]   = "dN/dP_{mW}";
+  yAxisTitle_missingBnWJet["memLR"] = "dN/dP_{mBW}";
   yMin["memLR"]                     = 1.1e-5;
   yMin_wRatio["memLR"]              = 1.1e-5;
   yMax["memLR"]                     = 1.9e0;
@@ -1343,8 +1350,8 @@ void makeMEMPerformancePlots_bbww_singlelepton()
 
       showHistograms(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY,
-        histogram_noSmearing_2genuineBJets_signal, "Signal",
-        histogram_noSmearing_2genuineBJets_background, "Background",
+        histogram_noSmearing_2genuineBJets_2genuineWJets_signal, "Signal",
+        histogram_noSmearing_2genuineBJets_2genuineWJets_background, "Background",
         nullptr, "",
         nullptr, "",
         showHistograms_signal_vs_background_colors, showHistograms_signal_vs_background_markerStyles, showHistograms_signal_vs_background_markerSizes, 
@@ -1364,7 +1371,7 @@ void makeMEMPerformancePlots_bbww_singlelepton()
 
         showGraphs(
           showGraphs_canvasSizeX, showGraphs_canvasSizeY,
-          graph_ROC_noSmearing_2genuineBJets_logScale, "",
+          graph_ROC_noSmearing_2genuineBJets_2genuineWJets_logScale, "",
           nullptr, "",
           nullptr, "",
           nullptr, "",
@@ -1492,7 +1499,7 @@ void makeMEMPerformancePlots_bbww_singlelepton()
         0.055, 0.23, 0.77, 0.48, 0.15, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
-        numBinsX[histogramKey], xMin[histogramKey], xMax_probS[histogramKey], xAxisTitle_missingWJet[histogramKey], showHistograms_xAxisOffset,
+        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle_missingWJet[histogramKey], showHistograms_xAxisOffset,
         true, yMin[histogramKey], yMax[histogramKey], yAxisTitle_missingWJet[histogramKey], showHistograms_yAxisOffset,
         Form("hh_bbwwMEM_singlelepton_effectOfFakes_%s_missingWJet_signal.pdf", histogramKey.data()));
       showHistograms(
@@ -1530,10 +1537,10 @@ void makeMEMPerformancePlots_bbww_singlelepton()
 
       showHistograms(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY,
-        histogram_noSmearing_genuineBJet_genuineWJet_signal, "genuine b-jet & genuine W-jet",
-        histogram_noSmearing_fakeBJet_genuineWJet_signal, "fake b-jet & genuine W-jet",
-        histogram_noSmearing_genuineBJets_fakeWJet_signal, "genuine b-jet & fake W-jet",
-        histogram_noSmearing_fakeBJet_fakeWJet_signal, "fake b-jet & fake W-jet",
+        histogram_missingBnWJet_noSmearing_genuineBJet_genuineWJet_signal, "genuine b-jet & genuine W-jet",
+        histogram_missingBnWJet_noSmearing_fakeBJet_genuineWJet_signal, "fake b-jet & genuine W-jet",
+        histogram_missingBnWJet_noSmearing_genuineBJet_fakeWJet_signal, "genuine b-jet & fake W-jet",
+        histogram_missingBnWJet_noSmearing_fakeBJet_fakeWJet_signal, "fake b-jet & fake W-jet",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
         showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
         0.055, 0.23, 0.77, 0.48, 0.15, showHistograms_legendOptions,
@@ -1544,10 +1551,10 @@ void makeMEMPerformancePlots_bbww_singlelepton()
         Form("hh_bbwwMEM_singlelepton_effectOfFakes_%s_missingBnWJet_signal.pdf", histogramKey.data()));
       showHistograms(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY,
-        histogram_noSmearing_genuineBJet_genuineWJet_background, "genuine b-jet & genuine W-jet",
-        histogram_noSmearing_fakeBJet_genuineWJet_background, "fake b-jet & genuine W-jet",
-        histogram_noSmearing_genuineBJets_fakeWJet_background, "genuine b-jet & fake W-jet",
-        histogram_noSmearing_fakeBJet_fakeWJet_background, "fake b-jet & fake W-jet",
+        histogram_missingBnWJet_noSmearing_genuineBJet_genuineWJet_background, "genuine b-jet & genuine W-jet",
+        histogram_missingBnWJet_noSmearing_fakeBJet_genuineWJet_background, "fake b-jet & genuine W-jet",
+        histogram_missingBnWJet_noSmearing_genuineBJet_fakeWJet_background, "genuine b-jet & fake W-jet",
+        histogram_missingBnWJet_noSmearing_fakeBJet_fakeWJet_background, "fake b-jet & fake W-jet",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
         showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
         0.055, 0.23, 0.77, 0.48, 0.15, showHistograms_legendOptions,
@@ -1661,10 +1668,10 @@ void makeMEMPerformancePlots_bbww_singlelepton()
 
         showGraphs(
           showGraphs_canvasSizeX, showGraphs_canvasSizeY,
-          graph_ROC_missingBnWJet_noSmearing_genuineBJets_2genuineWJets_logScale, "genuine b-jet & genuine W-jet",
-          graph_ROC_missingBnWJet_noSmearing_fakeBJet_2genuineWJets_logScale, "fake b-jet & genuine W-jet",
-          graph_ROC_missingBnWJet_noSmearing_genuineBJets_1genuineWJet_logScale, "genuine b-jet & fake W-jet",
-          graph_ROC_missingBnWJet_noSmearing_fakeBJet_1genuineWJet_logScale, "fake b-jet & fake W-jet",
+          graph_ROC_missingBnWJet_noSmearing_genuineBJet_genuineWJet_logScale, "genuine b-jet & genuine W-jet",
+          graph_ROC_missingBnWJet_noSmearing_fakeBJet_genuineWJet_logScale, "fake b-jet & genuine W-jet",
+          graph_ROC_missingBnWJet_noSmearing_genuineBJet_fakeWJet_logScale, "genuine b-jet & fake W-jet",
+          graph_ROC_missingBnWJet_noSmearing_fakeBJet_fakeWJet_logScale, "fake b-jet & fake W-jet",
           showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, 
           showGraphs_lineStyles, showGraphs_lineWidths, showGraphs_drawOptions,
           0.055, 0.23, 0.72, 0.48, 0.15, showGraphs_legendOptions,
