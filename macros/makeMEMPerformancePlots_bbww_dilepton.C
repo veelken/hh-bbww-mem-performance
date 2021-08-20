@@ -24,12 +24,13 @@ enum { kUndefined, kSignal_lo, kSignal_nlo, kBackground_lo, kBackground_nlo };
 
 enum { kProbSignal, kProbBackground, kLR };
 
-void getHistogramKey(int idxHistogram)
+std::string getHistogramKey(int idxHistogram)
 {
   if      ( idxHistogram == kProbSignal     ) return "probS";
   else if ( idxHistogram == kProbBackground ) return "probB";
   else if ( idxHistogram == kLR             ) return "memLR";
   else assert(0);
+  return "";
 }
 
 TH1* loadHistogram(TFile* inputFile, const std::string& directory_part1, const std::string& directory_part2, int signal_or_background, const std::string& histogramName)
@@ -1251,17 +1252,32 @@ void makeMEMPerformancePlots_bbww_dilepton()
   std::vector<std::string> showHistograms_signal_vs_background_drawOptions = { "ep", "ep" };
   std::vector<std::string> showHistograms_signal_vs_background_legendOptions = { "p", "p" };
 
-  xAxisTitle["memLR"]               = "P"
-  xAxisTitle_missingBJet["memLR"]   = "P_{mB}"
-  xAxisTitle_missingWJet["memLR"]   = "P_{mW}"
-  xAxisTitle_missingBnWJet["memLR"] = "P_{mBW}"
+  std::map<std::string, std::string> xAxisTitle;               // key = getHistogramKey(idxHistogram)
+  std::map<std::string, std::string> xAxisTitle_missingBJet;   // key = getHistogramKey(idxHistogram)
+  std::map<std::string, std::string> xAxisTitle_missingWJet;   // key = getHistogramKey(idxHistogram)
+  std::map<std::string, std::string> xAxisTitle_missingBnWJet; // key = getHistogramKey(idxHistogram)
+  std::map<std::string, int>         numBinsX;                 // key = getHistogramKey(idxHistogram)
+  std::map<std::string, double>      xMin;                     // key = getHistogramKey(idxHistogram)
+  std::map<std::string, double>      xMax;
+  std::map<std::string, std::string> yAxisTitle;               // key = getHistogramKey(idxHistogram)
+  std::map<std::string, std::string> yAxisTitle_missingBJet;   // key = getHistogramKey(idxHistogram)
+  std::map<std::string, std::string> yAxisTitle_missingWJet;   // key = getHistogramKey(idxHistogram)
+  std::map<std::string, std::string> yAxisTitle_missingBnWJet; // key = getHistogramKey(idxHistogram)
+  std::map<std::string, double>      yMin;                     // key = getHistogramKey(idxHistogram)
+  std::map<std::string, double>      yMin_wRatio;              // key = getHistogramKey(idxHistogram)
+  std::map<std::string, double>      yMax;                     // key = getHistogramKey(idxHistogram)
+
+  xAxisTitle["memLR"]               = "P";
+  xAxisTitle_missingBJet["memLR"]   = "P_{mB}";
+  xAxisTitle_missingWJet["memLR"]   = "P_{mW}";
+  xAxisTitle_missingBnWJet["memLR"] = "P_{mBW}";
   numBinsX["memLR"]                 = 40;
   xMin["memLR"]                     = 0.;
   xMax["memLR"]                     = 1.;
-  yAxisTitle["memLR"]               = "dN/dP"
-  yAxisTitle_missingBJet["memLR"]   = "dN/dP_{mB}"
-  yAxisTitle_missingWJet["memLR"]   = "dN/dP_{mW}"
-  yAxisTitle_missingBnWJet["memLR"] = "dN/dP_{mBW}"
+  yAxisTitle["memLR"]               = "dN/dP";
+  yAxisTitle_missingBJet["memLR"]   = "dN/dP_{mB}";
+  yAxisTitle_missingWJet["memLR"]   = "dN/dP_{mW}";
+  yAxisTitle_missingBnWJet["memLR"] = "dN/dP_{mBW}";
   yMin["memLR"]                     = 1.1e-5;
   yMin_wRatio["memLR"]              = 1.1e-5;
   yMax["memLR"]                     = 1.9e0;
@@ -1339,8 +1355,8 @@ void makeMEMPerformancePlots_bbww_dilepton()
       if ( idxHistogram == kLR ) {
         TGraph* graph_ROC_noSmearing_2genuineBJets_logScale = compGraphROC(
           "graph_ROC_noSmearing_2genuineBJets",
-          histogram_memLR_noSmearing_2genuineBJets_signal, 
-          histogram_memLR_noSmearing_2genuineBJets_background, true);
+          histogram_noSmearing_2genuineBJets_signal, 
+          histogram_noSmearing_2genuineBJets_background, true);
 
         showGraphs(
           showGraphs_canvasSizeX, showGraphs_canvasSizeY,
@@ -1457,8 +1473,8 @@ void makeMEMPerformancePlots_bbww_dilepton()
 
       showHistograms(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY,
-        histogram_probS_missingBJet_noSmearing_genuineBJet_signal, "genuine b-jet",
-        histogram_probS_missingBJet_noSmearing_fakeBJet_signal, "fake b-jet",
+        histogram_missingBJet_noSmearing_genuineBJet_signal, "genuine b-jet",
+        histogram_missingBJet_noSmearing_fakeBJet_signal, "fake b-jet",
         nullptr, "",
         nullptr, "",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
@@ -1471,8 +1487,8 @@ void makeMEMPerformancePlots_bbww_dilepton()
         Form("hh_bbwwMEM_dilepton_effectOfFakes_%s_missingBJet_signal.pdf", histogramKey.data()));
       showHistograms(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY,
-        histogram_probS_missingBJet_noSmearing_genuineBJet_background, "genuine b-jet",
-        histogram_probS_missingBJet_noSmearing_fakeBJet_background, "fake b-jet",
+        histogram_missingBJet_noSmearing_genuineBJet_background, "genuine b-jet",
+        histogram_missingBJet_noSmearing_fakeBJet_background, "fake b-jet",
         nullptr, "",
         nullptr, "",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
@@ -1586,10 +1602,10 @@ void makeMEMPerformancePlots_bbww_dilepton()
   
       showHistograms_wRatio(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
-        histogram_probS_noSmearing_2genuineBJets_signal, "MC truth",
-        histogram_probS_jetSmearing_2genuineBJets_signal, "E_{b} smearing",
-        histogram_probS_metSmearing_2genuineBJets_signal, "#rho smearing",
-        //histogram_probS_jet_and_metSmearing_2genuineBJets_signal, "E_{b} + #rho smearing",
+        histogram_noSmearing_2genuineBJets_signal, "MC truth",
+        histogram_jetSmearing_2genuineBJets_signal, "E_{b} smearing",
+        histogram_metSmearing_2genuineBJets_signal, "#rho smearing",
+        //histogram_jet_and_metSmearing_2genuineBJets_signal, "E_{b} + #rho smearing",
         nullptr, "",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
         showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
@@ -1602,10 +1618,10 @@ void makeMEMPerformancePlots_bbww_dilepton()
         Form("hh_bbwwMEM_dilepton_effectOfSmearing_%s_signal.pdf", histogramKey.data()));
       showHistograms_wRatio(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
-        histogram_probS_noSmearing_2genuineBJets_background, "MC truth",
-        histogram_probS_jetSmearing_2genuineBJets_background, "E_{b} smearing",
-        histogram_probS_metSmearing_2genuineBJets_background, "#rho smearing",
-        //histogram_probS_jet_and_metSmearing_2genuineBJets_background, "E_{b} + #rho smearing",
+        histogram_noSmearing_2genuineBJets_background, "MC truth",
+        histogram_jetSmearing_2genuineBJets_background, "E_{b} smearing",
+        histogram_metSmearing_2genuineBJets_background, "#rho smearing",
+        //histogram_jet_and_metSmearing_2genuineBJets_background, "E_{b} + #rho smearing",
         nullptr, "",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
         showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
@@ -1637,10 +1653,10 @@ void makeMEMPerformancePlots_bbww_dilepton()
     
       showHistograms_wRatio(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
-        histogram_probS_missingBJet_noSmearing_genuineBJet_signal, "MC truth",
-        histogram_probS_missingBJet_jetSmearing_genuineBJet_signal, "E_{b} smearing",
-        histogram_probS_missingBJet_metSmearing_genuineBJet_signal, "#rho smearing",
-        //histogram_probS_missingBJet_jet_and_metSmearing_genuineBJet_signal, "E_{b} + #rho smearing",
+        histogram_missingBJet_noSmearing_genuineBJet_signal, "MC truth",
+        histogram_missingBJet_jetSmearing_genuineBJet_signal, "E_{b} smearing",
+        histogram_missingBJet_metSmearing_genuineBJet_signal, "#rho smearing",
+        //histogram_missingBJet_jet_and_metSmearing_genuineBJet_signal, "E_{b} + #rho smearing",
         nullptr, "",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
         showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
@@ -1653,10 +1669,10 @@ void makeMEMPerformancePlots_bbww_dilepton()
         Form("hh_bbwwMEM_dilepton_effectOfSmearing_%s_missingBJet_signal.pdf", histogramKey.data()));
       showHistograms_wRatio(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
-        histogram_probS_missingBJet_noSmearing_genuineBJet_background, "MC truth",
-        histogram_probS_missingBJet_jetSmearing_genuineBJet_background, "E_{b} smearing",
-        histogram_probS_missingBJet_metSmearing_genuineBJet_background, "#rho smearing",
-        //histogram_probS_missingBJet_jet_and_metSmearing_genuineBJet_background, "E_{b} + #rho smearing",
+        histogram_missingBJet_noSmearing_genuineBJet_background, "MC truth",
+        histogram_missingBJet_jetSmearing_genuineBJet_background, "E_{b} smearing",
+        histogram_missingBJet_metSmearing_genuineBJet_background, "#rho smearing",
+        //histogram_missingBJet_jet_and_metSmearing_genuineBJet_background, "E_{b} + #rho smearing",
         nullptr, "",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
         showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
@@ -1757,8 +1773,8 @@ void makeMEMPerformancePlots_bbww_dilepton()
 
       showHistograms_wRatio(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
-        histogram_probS_lo_signal, "LO",
-        histogram_probS_nlo_signal, "NLO",
+        histogram_lo_signal, "LO",
+        histogram_nlo_signal, "NLO",
         nullptr, "",
         nullptr, "",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
@@ -1787,12 +1803,12 @@ void makeMEMPerformancePlots_bbww_dilepton()
       if ( idxHistogram == kLR ) {
         TGraph* graph_ROC_lo_logScale = compGraphROC(
           "graph_ROC_lo",
-          histogram_memLR_lo_signal, 
-          histogram_memLR_lo_background, true);
+          histogram_lo_signal, 
+          histogram_lo_background, true);
         TGraph* graph_ROC_nlo_logScale = compGraphROC(
           "graph_ROC_nlo",
-          histogram_memLR_nlo_signal, 
-          histogram_memLR_nlo_background, true);
+          histogram_nlo_signal, 
+          histogram_nlo_background, true);
 
         //showGraphs_wRatio(
         //  showGraphs_canvasSizeX, showGraphs_canvasSizeY_wRatio,
