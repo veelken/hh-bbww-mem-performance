@@ -9,7 +9,7 @@ using namespace mem;
 
 BJetTF_toy::BJetTF_toy(int verbosity)
   : BJetTF(verbosity)
-  , coeff_(1.00) // CV: take jet pT resolution to be 100%/sqrt(pT)
+  , coeff_(1.00) // CV: take jet pT resolution to be 100%*sqrt(pT)
 {}
 
 BJetTF_toy::~BJetTF_toy()
@@ -33,7 +33,7 @@ double BJetTF_toy::Eval(double trueEn) const
   if ( trueEn > bottomQuarkMass ) {
     double trueP = TMath::Sqrt(trueEn*trueEn - bottomQuarkMass2);
     double truePt = trueP/TMath::CosH(measuredEta_);
-    double sigma = coeff_/TMath::Sqrt(TMath::Max(1., truePt));
+    double sigma = coeff_*TMath::Sqrt(TMath::Max(1., truePt));
     prob = tthMEM::functions::gaussianPDF(measuredPt_, truePt, sigma);
   }
   return prob;
