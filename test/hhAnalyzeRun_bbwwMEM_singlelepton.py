@@ -53,6 +53,7 @@ if __name__ == '__main__':
     executable_analyze                    = "analyze_hh_bbwwMEM_singlelepton",
     cfgFile_analyze                       = "analyze_hh_bbwwMEM_singlelepton_cfg.py",
     samples                               = samples,
+    max_jobs_per_sample                   = 1000,
     apply_jetSmearing_options             = [ True, False ],
     apply_metSmearing_options             = [ True, False ],
     max_files_per_job                     = files_per_job,

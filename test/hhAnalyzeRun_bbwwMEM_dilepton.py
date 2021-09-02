@@ -53,6 +53,8 @@ if __name__ == '__main__':
     executable_analyze                    = "analyze_hh_bbwwMEM_dilepton",
     cfgFile_analyze                       = "analyze_hh_bbwwMEM_dilepton_cfg.py",
     samples                               = samples,
+    ##max_jobs_per_sample                   = 1000, # CV: use for tests
+    max_jobs_per_sample                   = 5000, # CV: use when making plots for paper
     apply_jetSmearing_options             = [ True, False ],
     apply_metSmearing_options             = [ True, False ],
     max_files_per_job                     = files_per_job,

@@ -35,6 +35,7 @@ class analyzeConfig_hh_bbwwMEM_singlelepton(analyzeConfig_hh):
         executable_analyze,
         cfgFile_analyze,
         samples,
+        max_jobs_per_sample,
         apply_jetSmearing_options,
         apply_metSmearing_options,
         max_files_per_job,
@@ -72,6 +73,7 @@ class analyzeConfig_hh_bbwwMEM_singlelepton(analyzeConfig_hh):
       use_home              = use_home,
       template_dir          = os.path.join(os.getenv('CMSSW_BASE'), 'src', 'hhAnalysis', 'bbwwMEMPerformanceStudies', 'test', 'templates')
     )
+    self.max_jobs_per_sample = max_jobs_per_sample
     self.apply_jetSmearing_options = apply_jetSmearing_options
     self.apply_metSmearing_options = apply_metSmearing_options
     self.cfgFile_analyze = os.path.join(self.template_dir, cfgFile_analyze)
@@ -165,6 +167,9 @@ class analyzeConfig_hh_bbwwMEM_singlelepton(analyzeConfig_hh):
           else:
             raise ValueError("Invalid sample: %s" % sample_info["process_name_specific"])
           numJobs = numJobsPerFile*len(inputFileList.keys())
+          if numJobs > self.max_jobs_per_sample:
+            print("Processing of full sample would require submission of %i jobs. Restricting the number of jobs to %i." % (numJobs, self.max_jobs_per_sample))
+            numJobs = self.max_jobs_per_sample
           for jobId in range(1, numJobs + 1):
             
             ntupleId = ((jobId - 1)/numJobsPerFile) + 1
