@@ -243,8 +243,8 @@ void showHistograms(double canvasSizeX, double canvasSizeY,
   outputFileName_plot.append(std::string(outputFileName, 0, idx));
   //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
   canvas->Print(std::string(outputFileName_plot).append(".png").data());
-  canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
-  canvas->Print(std::string(outputFileName_plot).append(".root").data());
+  //canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
+  //canvas->Print(std::string(outputFileName_plot).append(".root").data());
 
   delete label;
   delete legend;
@@ -572,8 +572,8 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
   outputFileName_plot.append(std::string(outputFileName, 0, idx));
   //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
   canvas->Print(std::string(outputFileName_plot).append(".png").data());
-  canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
-  canvas->Print(std::string(outputFileName_plot).append(".root").data());
+  //canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
+  //canvas->Print(std::string(outputFileName_plot).append(".root").data());
 
   delete label;
   delete legend;
@@ -616,6 +616,7 @@ TGraph* compGraphROC(const std::string& graphName, const TGraph* graphEfficiency
   //std::cout << " graphName = " << graphName << std::endl;
   assert(graphEfficiency_signal->GetN() == graphEfficiency_background->GetN());
   int numPoints = graphEfficiency_signal->GetN();
+  //std::cout << " numPoints = " << numPoints << std::endl;
   TGraph* graphROC = new TGraph(numPoints);
   graphROC->SetName(graphName.data());
   for ( int idxPoint = 0; idxPoint < numPoints; ++idxPoint ) {
@@ -656,19 +657,21 @@ struct graphPoint
   double y_;
 };
 
-TGraph* sparsifyGraph(TGraph* graph, double minDeltaX = 0.025)
+TGraph* sparsifyGraph(TGraph* graph, double minDeltaX = 0.025, double maxDeltaY = 0.100)
 {
   std::vector<graphPoint> graphPoints_sparsified;
   double x_last = -1.e+3;
+  double y_last = -1.e+3;
   int numPoints = graph->GetN();
   for ( int idxPoint = 0; idxPoint < numPoints; ++idxPoint ) {
     double x, y;
     graph->GetPoint(idxPoint, x, y);
     if ( x < 0.01 ) continue; // CV: prevent point @ zero signal efficiency and zero background rate from being drawn
     //if ( x > 0.99 ) continue; // CV: prevent point @ 100% signal efficiency and 100% background rate from being drawn
-    if ( idxPoint == 0 || TMath::Abs(x - x_last) > minDeltaX || idxPoint == (numPoints - 1) ) {
+    if ( idxPoint == 0 || TMath::Abs(x - x_last) > minDeltaX || TMath::Abs(y - y_last) > maxDeltaY || idxPoint == (numPoints - 1) ) {
       graphPoints_sparsified.push_back(graphPoint(x, y));
       x_last = x;
+      y_last = y;
     }
   }
   int numPoints_sparsified = graphPoints_sparsified.size();
@@ -867,8 +870,8 @@ void showGraphs(double canvasSizeX, double canvasSizeY,
   outputFileName_plot.append(std::string(outputFileName, 0, idx));
   //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
   canvas->Print(std::string(outputFileName_plot).append(".png").data());
-  canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
-  canvas->Print(std::string(outputFileName_plot).append(".root").data());
+  //canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
+  //canvas->Print(std::string(outputFileName_plot).append(".root").data());
 
   delete label;
   delete legend;
@@ -1164,8 +1167,8 @@ void showGraphs_wRatio(double canvasSizeX, double canvasSizeY,
   outputFileName_plot.append(std::string(outputFileName, 0, idx));
   //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
   canvas->Print(std::string(outputFileName_plot).append(".png").data());
-  canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
-  canvas->Print(std::string(outputFileName_plot).append(".root").data());
+  //canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
+  //canvas->Print(std::string(outputFileName_plot).append(".root").data());
 
   delete label;
   delete legend;
@@ -1193,7 +1196,7 @@ void makeMEMPerformancePlots_bbww_singlelepton()
   bool makePlots_effectOfSmearing = true;
   bool makePlots_effectOfHigherOrders = true;
 
-  std::string inputFilePath = "/hdfs/local/veelken/hhAnalysis/2016/2021Aug18/histograms/hh_bbwwMEM_singlelepton/";
+  std::string inputFilePath = "/hdfs/local/veelken/hhAnalysis/2016/2021Aug20/histograms/hh_bbwwMEM_singlelepton/";
   std::string inputFileName = "histograms_harvested_stage2_hh_bbwwMEM_singlelepton.root";
   TString inputFileName_full = inputFilePath.data();
   if ( !inputFileName_full.EndsWith("/") ) inputFileName_full.Append("/");
@@ -1418,7 +1421,7 @@ void makeMEMPerformancePlots_bbww_singlelepton()
         histogram_noSmearing_1genuineBJet_1genuineWJet_signal, "1 genuine b-jet & 1 genuine W-jet",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
         showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
-        0.055, 0.23, 0.77, 0.48, 0.15, showHistograms_legendOptions,
+        0.040, 0.23, 0.72, 0.48, 0.21, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
         numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset,
@@ -1432,7 +1435,7 @@ void makeMEMPerformancePlots_bbww_singlelepton()
         histogram_noSmearing_1genuineBJet_1genuineWJet_background, "1 genuine b-jet & 1 genuine W-jet",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
         showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
-        0.055, 0.23, 0.77, 0.48, 0.15, showHistograms_legendOptions,
+        0.040, 0.23, 0.72, 0.48, 0.21, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
         numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset,
@@ -1457,7 +1460,7 @@ void makeMEMPerformancePlots_bbww_singlelepton()
         nullptr, "",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
         showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
-        0.055, 0.23, 0.77, 0.48, 0.15, showHistograms_legendOptions,
+        0.040, 0.23, 0.77, 0.48, 0.15, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
         numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle_missingBJet[histogramKey], showHistograms_xAxisOffset,
@@ -1471,7 +1474,7 @@ void makeMEMPerformancePlots_bbww_singlelepton()
         nullptr, "",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
         showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
-        0.055, 0.23, 0.77, 0.48, 0.15, showHistograms_legendOptions,
+        0.040, 0.23, 0.77, 0.48, 0.15, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
         numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle_missingBJet[histogramKey], showHistograms_xAxisOffset,
@@ -1496,7 +1499,7 @@ void makeMEMPerformancePlots_bbww_singlelepton()
         nullptr, "",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
         showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
-        0.055, 0.23, 0.77, 0.48, 0.15, showHistograms_legendOptions,
+        0.040, 0.23, 0.77, 0.48, 0.15, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
         numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle_missingWJet[histogramKey], showHistograms_xAxisOffset,
@@ -1510,7 +1513,7 @@ void makeMEMPerformancePlots_bbww_singlelepton()
         nullptr, "",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
         showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
-        0.055, 0.23, 0.77, 0.48, 0.15, showHistograms_legendOptions,
+        0.040, 0.23, 0.77, 0.48, 0.15, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
         numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle_missingWJet[histogramKey], showHistograms_xAxisOffset,
@@ -1543,7 +1546,7 @@ void makeMEMPerformancePlots_bbww_singlelepton()
         histogram_missingBnWJet_noSmearing_fakeBJet_fakeWJet_signal, "fake b-jet & fake W-jet",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
         showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
-        0.055, 0.23, 0.77, 0.48, 0.15, showHistograms_legendOptions,
+        0.040, 0.23, 0.72, 0.48, 0.21, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
         numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle_missingBnWJet[histogramKey], showHistograms_xAxisOffset,
@@ -1557,7 +1560,7 @@ void makeMEMPerformancePlots_bbww_singlelepton()
         histogram_missingBnWJet_noSmearing_fakeBJet_fakeWJet_background, "fake b-jet & fake W-jet",
         showHistograms_colors, showHistograms_markerStyles, showHistograms_markerSizes, 
         showHistograms_lineStyles, showHistograms_lineWidths, showHistograms_drawOptions,
-        0.055, 0.23, 0.77, 0.48, 0.15, showHistograms_legendOptions,
+        0.040, 0.23, 0.72, 0.48, 0.21, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
         numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle_missingBnWJet[histogramKey], showHistograms_xAxisOffset,
@@ -1590,7 +1593,7 @@ void makeMEMPerformancePlots_bbww_singlelepton()
           graph_ROC_noSmearing_1genuineBJet_1genuineWJet_logScale, "1 genuine b-jet & 1 genuine W-jet",
           showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, 
           showGraphs_lineStyles, showGraphs_lineWidths, showGraphs_drawOptions,
-          0.055, 0.23, 0.72, 0.48, 0.15, showGraphs_legendOptions,
+          0.040, 0.23, 0.72, 0.48, 0.21, showGraphs_legendOptions,
           labelText_signal_vs_background, 0.040,
           0.1600, 0.9525, 0.2900, 0.0600,
           10, 0., 1.01, "Signal Efficiency", showGraphs_xAxisOffset,
@@ -1616,7 +1619,7 @@ void makeMEMPerformancePlots_bbww_singlelepton()
           nullptr, "",
           showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, 
           showGraphs_lineStyles, showGraphs_lineWidths, showGraphs_drawOptions,
-          0.055, 0.23, 0.79, 0.48, 0.15, showGraphs_legendOptions,
+          0.040, 0.23, 0.79, 0.48, 0.15, showGraphs_legendOptions,
           labelText_signal_vs_background, 0.040,
           0.1600, 0.9525, 0.2900, 0.0600,
           10, 0., 1.01, "Signal Efficiency", showGraphs_xAxisOffset,
@@ -1642,7 +1645,7 @@ void makeMEMPerformancePlots_bbww_singlelepton()
           nullptr, "",
           showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, 
           showGraphs_lineStyles, showGraphs_lineWidths, showGraphs_drawOptions,
-          0.055, 0.23, 0.79, 0.48, 0.15, showGraphs_legendOptions,
+          0.040, 0.23, 0.79, 0.48, 0.15, showGraphs_legendOptions,
           labelText_signal_vs_background, 0.040,
           0.1600, 0.9525, 0.2900, 0.0600,
           10, 0., 1.01, "Signal Efficiency", showGraphs_xAxisOffset,
@@ -1674,7 +1677,7 @@ void makeMEMPerformancePlots_bbww_singlelepton()
           graph_ROC_missingBnWJet_noSmearing_fakeBJet_fakeWJet_logScale, "fake b-jet & fake W-jet",
           showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, 
           showGraphs_lineStyles, showGraphs_lineWidths, showGraphs_drawOptions,
-          0.055, 0.23, 0.72, 0.48, 0.15, showGraphs_legendOptions,
+          0.040, 0.23, 0.72, 0.48, 0.21, showGraphs_legendOptions,
           labelText_signal_vs_background, 0.040,
           0.1600, 0.9525, 0.2900, 0.0600,
           10, 0., 1.01, "Signal Efficiency", showGraphs_xAxisOffset,
