@@ -70,6 +70,28 @@ typedef math::PtEtaPhiMLorentzVector LV;
 typedef std::vector<std::string> vstring;
 typedef std::vector<double> vdouble;
 
+//std::string
+//format_vsize(const std::set<size_t> & vs)
+//{
+//  std::ostringstream os;
+//  const unsigned numEntries = vs.size();
+//
+//  os << "{ ";
+//  unsigned iEntry = 0;
+//  for ( std::set<size_t>::const_iterator vs_iter = vs.begin(); vs_iter != vs.end(); ++vs_iter )
+//  {
+//    os << (*vs_iter);
+//    if(iEntry < numEntries - 1)
+//    {
+//      os << ", ";
+//    }
+//    ++iEntry;
+//  }
+//  os << " }";
+//
+//  return os.str();
+//}
+
 /**
  * @brief Produce MEM performance plots for single-lepton channel of the HH->bbWW analysis.
  */
@@ -536,7 +558,7 @@ int main(int argc, char* argv[])
           genBQuark->pt(), genBQuark->eta(), genBQuark->phi(), mem::bottomQuarkMass, genBQuark->pdgId()));
       }
       for ( std::vector<GenParticle>::const_iterator genWJet = genWJetsFromTop.begin();
-              genWJet != genWJetsFromTop.end(); ++genWJet ) {
+            genWJet != genWJetsFromTop.end(); ++genWJet ) {
         genWJetsForMatching.push_back(GenJet(
           genWJet->pt(), genWJet->eta(), genWJet->phi(), genWJet->mass(), genWJet->pdgId()));
       }
@@ -575,6 +597,10 @@ int main(int argc, char* argv[])
 
     GenMEt genMEt(genMEtPx, genMEtPy);
 
+    //std::cout << "#selGenBJets = " << selGenBJets.size() << std::endl;
+    //std::cout << "#selGenWJets = " << selGenWJets.size() << std::endl;
+    //std::cout << "#selGenJets = " << selGenJets.size() << std::endl;
+    
 //--- apply pT smearing to generator-level b-jets (and other jets)
     const double genBJet_pFake = 0.10;
     std::vector<GenJet> selGenBJets_smeared;
@@ -645,7 +671,7 @@ int main(int argc, char* argv[])
       if ( u > genWJet_pFake && usedGenWJets.find(idxGenWJet) == usedGenWJets.end() ) {
 	genJet = selGenWJet;
         genJet_isFake = false;
-      } else if ( selGenJets.size() >= 1 ) {
+      } else if ( selGenJets.size() > usedGenJets.size() ) {
         int idxGenJet = -1;
         while ( idxGenJet == -1 ) {
           int idxGenJet_tmp = TMath::Nint(rnd.Uniform(-0.5, selGenJets.size() - 0.5));
