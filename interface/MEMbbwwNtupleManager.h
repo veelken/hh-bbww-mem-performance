@@ -1,0 +1,268 @@
+#ifndef hhAnalysis_bbwwMEMPerformanceStudies_MEMbbwwNtupleManager_h
+#define hhAnalysis_bbwwMEMPerformanceStudies_MEMbbwwNtupleManager_h
+
+#include "CommonTools/Utils/interface/TFileDirectory.h"     // TFileDirectory
+#include "DataFormats/Math/interface/deltaR.h"              // deltaR
+
+#include "tthAnalysis/HiggsToTauTau/interface/EventInfo.h"  // EventInfo
+#include "tthAnalysis/HiggsToTauTau/interface/GenJet.h"     // GenJet
+#include "tthAnalysis/HiggsToTauTau/interface/GenLepton.h"  // GenLepton
+#include "tthAnalysis/HiggsToTauTau/interface/TypeTraits.h" // Traits<>
+
+#include "hhAnalysis/bbwwMEM/interface/MEMResult.h"         // MEMResultBase
+#include "hhAnalysis/bbwwMEM/interface/MeasuredParticle.h"  // MeasuredParticle
+
+#include <TTree.h>                                          // TTree
+#include <TMatrixD.h>                                       // TMatrixD
+
+class MEMbbwwNtupleManager
+{
+public:
+  MEMbbwwNtupleManager(const std::string & outputTreeName);
+  ~MEMbbwwNtupleManager();
+
+  void makeTree(TFileDirectory & dir);
+
+  void initializeBranches();
+  void read(const EventInfo & eventInfo);
+  void read(const MEMResultBase & memResult);
+  void resetBranches();
+
+protected:
+
+  std::string outputTreeName_;
+  TTree* tree_;
+
+  template <typename T>
+  const T * findGenMatch(const mem::MeasuredParticle * measuredParticle, const std::vector<T *> & genParticles)
+  {
+    const T * bestMatch = nullptr;
+    double dRmatch = 1.e+3;
+    for ( typename std::vector<T *>::const_iterator genParticle = genParticles.begin();
+          genParticle != genParticles.end(); ++genParticle ) {
+      double dR = deltaR(measuredParticle->eta(), measuredParticle->phi(), (*genParticle)->eta(), (*genParticle)->phi());
+      if ( dR < 0.3 && dR < dRmatch ) 
+      {
+        bestMatch = *genParticle;
+        dRmatch = dR;
+      }
+    }
+    return bestMatch;
+  }
+
+  Int_t run_;
+  Int_t ls_;
+  Long64_t event_;
+
+  Double_t memProbS_;
+  Double_t memProbSerr_;
+  Double_t memProbB_;
+  Double_t memProbBerr_;
+  Double_t memLR_;
+  Double_t memLRerr_;
+
+  struct jetBranches
+  {
+    jetBranches(const std::string & branchName)
+      : branchName_(branchName)
+      , measuredJet_(nullptr)
+      , genJet_(nullptr)
+    {}
+    ~jetBranches()
+    {}
+    void initializeBranches(TTree * tree)
+    {
+      tree->Branch(Form("%s_pt",   branchName_.c_str()), &pt_,   Form("%s_pt/%s",   branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
+      tree->Branch(Form("%s_eta",  branchName_.c_str()), &eta_,  Form("%s_eta/%s",  branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
+      tree->Branch(Form("%s_phi",  branchName_.c_str()), &phi_,  Form("%s_phi/%s",  branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
+      tree->Branch(Form("%s_mass", branchName_.c_str()), &mass_, Form("%s_mass/%s", branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
+    }
+    void resetBranches()
+    {
+      pt_   = 0.;
+      eta_  = 0.;
+      phi_  = 0.;
+      mass_ = 0.;
+    }
+    void read(const mem::MeasuredParticle * jet)
+    {
+      if ( jet )
+      {
+        pt_          = jet->pt();
+        eta_         = jet->eta();
+        phi_         = jet->phi();
+        mass_        = jet->mass();
+        measuredJet_ = jet;
+        genJet_      = nullptr;
+      }
+    }
+    void read(const GenJet * jet)
+    {
+      if ( jet )
+      {
+        pt_          = jet->p4().pt();
+        eta_         = jet->p4().eta();
+        phi_         = jet->p4().phi();
+        mass_        = jet->p4().mass();
+        measuredJet_ = nullptr;
+        genJet_      = jet;
+      }
+    }
+    std::string branchName_;
+    Float_t pt_;
+    Float_t eta_;
+    Float_t phi_;
+    Float_t mass_;
+    const mem::MeasuredParticle * measuredJet_;
+    const GenJet * genJet_;
+  };
+
+  int countMeasuredJets(const jetBranches * jet1, const jetBranches * jet2)
+  {
+    int numJets = 0;
+    if ( jet1 && jet1->measuredJet_ ) ++numJets;
+    if ( jet2 && jet2->measuredJet_ ) ++numJets;
+    return numJets;
+  }
+  int countGenJets(const jetBranches * jet1, const jetBranches * jet2)
+  {
+    int numJets = 0;
+    if ( jet1 && jet1->genJet_ ) ++numJets;
+    if ( jet2 && jet2->genJet_ ) ++numJets;
+    return numJets;
+  }
+  
+  jetBranches bjet1_;
+  jetBranches bjet2_;
+  Int_t nbjets_;
+  jetBranches gen_bjet1_;
+  jetBranches gen_bjet2_;
+  Int_t gen_nbjets_;
+
+  struct leptonBranches
+  {
+    leptonBranches(const std::string & branchName)
+      : branchName_(branchName)
+      , measuredLepton_(nullptr)
+      , genLepton_(nullptr)
+    {}
+    ~leptonBranches()
+    {}
+    void initializeBranches(TTree * tree)
+    {
+      tree->Branch(Form("%s_pt",    branchName_.c_str()), &pt_,    Form("%s_pt/%s",    branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
+      tree->Branch(Form("%s_eta",   branchName_.c_str()), &eta_,   Form("%s_eta/%s",   branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
+      tree->Branch(Form("%s_phi",   branchName_.c_str()), &phi_,   Form("%s_phi/%s",   branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
+      tree->Branch(Form("%s_pdgId", branchName_.c_str()), &pdgId_, Form("%s_pdgId/%s", branchName_.c_str(), Traits<Int_t>::TYPE_NAME));
+    }
+    void resetBranches()
+    {
+      pt_    = 0.;
+      eta_   = 0.;
+      phi_   = 0.;
+      pdgId_ = 0;
+    }
+    void read(const mem::MeasuredParticle * lepton)
+    {
+      if ( lepton )
+      {
+        pt_             = lepton->pt();
+        eta_            = lepton->eta();
+        phi_            = lepton->phi();
+        if      ( lepton->type() == mem::MeasuredParticle::kElectron && lepton->charge() < 0 ) pdgId_ = +11;
+        else if ( lepton->type() == mem::MeasuredParticle::kElectron && lepton->charge() > 0 ) pdgId_ = -11;
+        else if ( lepton->type() == mem::MeasuredParticle::kMuon     && lepton->charge() < 0 ) pdgId_ = +13;
+        else if ( lepton->type() == mem::MeasuredParticle::kMuon     && lepton->charge() > 0 ) pdgId_ = -13;
+        else assert(0);
+        measuredLepton_ = lepton;
+        genLepton_      = nullptr;
+      }
+    }
+    void read(const GenLepton * lepton)
+    {
+      if ( lepton )
+      {
+        pt_             = lepton->p4().pt();
+        eta_            = lepton->p4().eta();
+        phi_            = lepton->p4().phi();
+        pdgId_          = lepton->pdgId();
+        measuredLepton_ = nullptr;
+        genLepton_      = lepton;
+      }
+    }
+    std::string branchName_;
+    Float_t pt_;
+    Float_t eta_;
+    Float_t phi_;
+    Int_t pdgId_;
+    const mem::MeasuredParticle * measuredLepton_;
+    const GenLepton * genLepton_;
+  };
+
+  int countMeasuredLeptons(const leptonBranches * lepton1, const leptonBranches * lepton2 = nullptr)
+  {
+    int numLeptons = 0;
+    if ( lepton1 && lepton1->measuredLepton_ ) ++numLeptons;
+    if ( lepton2 && lepton2->measuredLepton_ ) ++numLeptons;
+    return numLeptons;
+  }
+  int countGenLeptons(const leptonBranches * lepton1, const leptonBranches * lepton2 = nullptr)
+  {
+    int numLeptons = 0;
+    if ( lepton1 && lepton1->genLepton_ ) ++numLeptons;
+    if ( lepton2 && lepton2->genLepton_ ) ++numLeptons;
+    return numLeptons;
+  }
+
+  struct metBranches
+  {
+    metBranches(const std::string & branchName)
+      : branchName_(branchName)
+    {}
+    ~metBranches()
+    {}
+    void initializeBranches(TTree * tree)
+    {
+      tree->Branch(Form("%s_px",    branchName_.c_str()), &px_,    Form("%s_px/%s",    branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
+      tree->Branch(Form("%s_py",    branchName_.c_str()), &py_,    Form("%s_py/%s",    branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
+      tree->Branch(Form("%s_cov00", branchName_.c_str()), &cov00_, Form("%s_cov00/%s", branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
+      tree->Branch(Form("%s_cov01", branchName_.c_str()), &cov01_, Form("%s_cov01/%s", branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
+      tree->Branch(Form("%s_cov11", branchName_.c_str()), &cov11_, Form("%s_cov11/%s", branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
+    }
+    void resetBranches()
+    {
+      px_    = 0.;
+      py_    = 0.;
+      cov00_ = 0.;
+      cov01_ = 0.;
+      cov11_ = 0.;
+    }
+    void read(double metPx, double metPy, const TMatrixD * metCov = nullptr)
+    {
+      px_    = metPx;
+      py_    = metPy;
+      if ( metCov )
+      {
+        cov00_ = metCov->operator()(0, 0);
+        cov01_ = metCov->operator()(0, 1);
+        cov11_ = metCov->operator()(1, 1);
+      }
+    }
+    std::string branchName_;
+    Float_t px_;
+    Float_t py_;
+    Float_t cov00_;
+    Float_t cov01_;
+    Float_t cov11_;
+  };
+
+  metBranches met_;
+  metBranches gen_met_;
+
+  // CV: define auxiliary variables for BDT regression training
+  Float_t ptbb_;
+  Float_t drbb_;
+  Float_t mbb_;
+};
+
+#endif // hhAnalysis_bbwwMEMPerformanceStudies_MEMbbwwNtupleManager_h
