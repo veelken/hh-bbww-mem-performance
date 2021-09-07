@@ -262,13 +262,13 @@ int main(int argc, char* argv[])
   };
   selHistManagerType* selHistManager = new selHistManagerType();
   selHistManager->mem_2genuineBJets_ = new MEMbbwwHistManagerDilepton(makeHistManager_cfg(process_string,
-    Form("%s/sel/mem_2genuineBJets_", histogramDir.data()), era_string, central_or_shift));
+    Form("%s/sel/mem_2genuineBJets", histogramDir.data()), era_string, central_or_shift));
   selHistManager->mem_2genuineBJets_->bookHistograms(fs);
   selHistManager->mem_1genuineBJet_ = new MEMbbwwHistManagerDilepton(makeHistManager_cfg(process_string,
     Form("%s/sel/mem_1genuineBJet", histogramDir.data()), era_string, central_or_shift));
   selHistManager->mem_1genuineBJet_->bookHistograms(fs);
   selHistManager->mem_0genuineBJets_ = new MEMbbwwHistManagerDilepton(makeHistManager_cfg(process_string,
-    Form("%s/sel/mem_0genuineBJets_", histogramDir.data()), era_string, central_or_shift));
+    Form("%s/sel/mem_0genuineBJets", histogramDir.data()), era_string, central_or_shift));
   selHistManager->mem_0genuineBJets_->bookHistograms(fs);
   selHistManager->mem_missingBJet_genuineBJet_ = new MEMbbwwHistManagerDilepton(makeHistManager_cfg(process_string,
     Form("%s/sel/mem_missingBJet_genuineBJet", histogramDir.data()), era_string, central_or_shift));
