@@ -24,6 +24,10 @@ enum { kUndefined, kSignal_lo, kSignal_nlo, kBackground_lo, kBackground_nlo };
 
 enum { kProbSignal, kProbBackground, kLR };
 
+bool makePlots_png  = true;
+bool makePlots_pdf  = true;
+bool makePlots_root = true;
+
 std::string getHistogramKey(int idxHistogram)
 {
   if      ( idxHistogram == kProbSignal     ) return "probS";
@@ -242,9 +246,9 @@ void showHistograms(double canvasSizeX, double canvasSizeY,
   size_t idx = outputFileName.find_last_of('.');
   outputFileName_plot.append(std::string(outputFileName, 0, idx));
   //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
-  canvas->Print(std::string(outputFileName_plot).append(".png").data());
-  canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
-  canvas->Print(std::string(outputFileName_plot).append(".root").data());
+  if ( makePlots_png  ) canvas->Print(std::string(outputFileName_plot).append(".png").data());
+  if ( makePlots_pdf  ) canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
+  if ( makePlots_root ) canvas->Print(std::string(outputFileName_plot).append(".root").data());
 
   delete label;
   delete legend;
@@ -571,9 +575,9 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
   size_t idx = outputFileName.find_last_of('.');
   outputFileName_plot.append(std::string(outputFileName, 0, idx));
   //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
-  canvas->Print(std::string(outputFileName_plot).append(".png").data());
-  canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
-  canvas->Print(std::string(outputFileName_plot).append(".root").data());
+  if ( makePlots_png  ) canvas->Print(std::string(outputFileName_plot).append(".png").data());
+  if ( makePlots_pdf  ) canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
+  if ( makePlots_root ) canvas->Print(std::string(outputFileName_plot).append(".root").data());
 
   delete label;
   delete legend;
@@ -656,19 +660,21 @@ struct graphPoint
   double y_;
 };
 
-TGraph* sparsifyGraph(TGraph* graph, double minDeltaX = 0.025)
+TGraph* sparsifyGraph(TGraph* graph, double minDeltaX = 0.025, double maxDeltaY = 0.100)
 {
   std::vector<graphPoint> graphPoints_sparsified;
   double x_last = -1.e+3;
+  double y_last = -1.e+3;
   int numPoints = graph->GetN();
   for ( int idxPoint = 0; idxPoint < numPoints; ++idxPoint ) {
     double x, y;
     graph->GetPoint(idxPoint, x, y);
     if ( x < 0.01 ) continue; // CV: prevent point @ zero signal efficiency and zero background rate from being drawn
     //if ( x > 0.99 ) continue; // CV: prevent point @ 100% signal efficiency and 100% background rate from being drawn
-    if ( idxPoint == 0 || TMath::Abs(x - x_last) > minDeltaX || idxPoint == (numPoints - 1) ) {
+    if ( idxPoint == 0 || TMath::Abs(x - x_last) > minDeltaX || TMath::Abs(y - y_last) > maxDeltaY || idxPoint == (numPoints - 1) ) {
       graphPoints_sparsified.push_back(graphPoint(x, y));
       x_last = x;
+      y_last = y;
     }
   }
   int numPoints_sparsified = graphPoints_sparsified.size();
@@ -866,9 +872,9 @@ void showGraphs(double canvasSizeX, double canvasSizeY,
   size_t idx = outputFileName.find_last_of('.');
   outputFileName_plot.append(std::string(outputFileName, 0, idx));
   //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
-  canvas->Print(std::string(outputFileName_plot).append(".png").data());
-  canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
-  canvas->Print(std::string(outputFileName_plot).append(".root").data());
+  if ( makePlots_png  ) canvas->Print(std::string(outputFileName_plot).append(".png").data());
+  if ( makePlots_pdf  ) canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
+  if ( makePlots_root ) canvas->Print(std::string(outputFileName_plot).append(".root").data());
 
   delete label;
   delete legend;
@@ -1163,9 +1169,9 @@ void showGraphs_wRatio(double canvasSizeX, double canvasSizeY,
   size_t idx = outputFileName.find_last_of('.');
   outputFileName_plot.append(std::string(outputFileName, 0, idx));
   //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
-  canvas->Print(std::string(outputFileName_plot).append(".png").data());
-  canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
-  canvas->Print(std::string(outputFileName_plot).append(".root").data());
+  if ( makePlots_png  ) canvas->Print(std::string(outputFileName_plot).append(".png").data());
+  if ( makePlots_pdf  ) canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
+  if ( makePlots_root ) canvas->Print(std::string(outputFileName_plot).append(".root").data());
 
   delete label;
   delete legend;
@@ -1193,7 +1199,7 @@ void makeMEMPerformancePlots_bbww_dilepton()
   bool makePlots_effectOfSmearing = true;
   bool makePlots_effectOfHigherOrders = true;
 
-  std::string inputFilePath = "/hdfs/local/veelken/hhAnalysis/2016/2021May17/histograms/hh_bbwwMEM_dilepton/";
+  std::string inputFilePath = "/hdfs/local/veelken/hhAnalysis/2016/2021Aug31v2/histograms/hh_bbwwMEM_dilepton/";
   std::string inputFileName = "histograms_harvested_stage2_hh_bbwwMEM_dilepton.root";
   TString inputFileName_full = inputFilePath.data();
   if ( !inputFileName_full.EndsWith("/") ) inputFileName_full.Append("/");
@@ -1211,9 +1217,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
   directories_part1[true][true]        = "hh_bbwwMEM_dilepton_jetSmearingEnabled_metSmearingEnabled";
   
   std::map<int, std::string> directories_part2; // key = number of genuine b-jets
-  directories_part2[2]                 = "sel/mem_2genuineBJets";
+  directories_part2[2]                 = "sel/mem_2genuineBJets_";
   directories_part2[1]                 = "sel/mem_1genuineBJet";
-  directories_part2[0]                 = "sel/mem_0genuineBJets";
+  directories_part2[0]                 = "sel/mem_0genuineBJets_";
   
   std::map<int, std::string> directories_part2_missingBJet; // key = 1 (0) if b-jet is genuine (fake)
   directories_part2_missingBJet[1]     = "sel/mem_missingBJet_genuineBJet";
@@ -1500,6 +1506,21 @@ void makeMEMPerformancePlots_bbww_dilepton()
         true, yMin[histogramKey], yMax[histogramKey], yAxisTitle[histogramKey], showHistograms_yAxisOffset,
         Form("hh_bbwwMEM_dilepton_effectOfFakes_%s_missingBJet_background.pdf", histogramKey.data()));
 
+      showHistograms(
+        showHistograms_canvasSizeX, showHistograms_canvasSizeY,
+        histogram_missingBJet_noSmearing_genuineBJet_signal, "Signal",
+        histogram_missingBJet_noSmearing_genuineBJet_background, "Background",
+        nullptr, "",
+        nullptr, "",
+        showHistograms_signal_vs_background_colors, showHistograms_signal_vs_background_markerStyles, showHistograms_signal_vs_background_markerSizes, 
+        showHistograms_signal_vs_background_lineStyles, showHistograms_signal_vs_background_lineWidths, showHistograms_drawOptions,
+        0.055, 0.23, 0.78, 0.33, 0.15, showHistograms_signal_vs_background_legendOptions,
+        "", 0.055,
+        0.1800, 0.9525, 0.2900, 0.0900,
+        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset,
+        true, yMin[histogramKey], yMax[histogramKey], yAxisTitle[histogramKey], showHistograms_yAxisOffset, 
+        Form("hh_bbwwMEM_dilepton_effectOfFakes_%s_missingBJet.pdf", histogramKey.data()));
+
       if ( idxHistogram == kLR ) {
         TGraph* graph_ROC_noSmearing_2genuineBJets_logScale = compGraphROC(
           "graph_ROC_noSmearing_2genuineBJets",
@@ -1527,7 +1548,7 @@ void makeMEMPerformancePlots_bbww_dilepton()
           nullptr, "",
           showGraphs_colors, showGraphs_markerStyles, showGraphs_markerSizes, 
           showGraphs_lineStyles, showGraphs_lineWidths, showGraphs_drawOptions,
-          0.055, 0.23, 0.72, 0.33, 0.15, showGraphs_legendOptions,
+          0.055, 0.23, 0.79, 0.33, 0.15, showGraphs_legendOptions,
           labelText_signal_vs_background, 0.040,
           0.1600, 0.9525, 0.2900, 0.0600,
           10, 0., 1.01, "Signal Efficiency", showGraphs_xAxisOffset,
@@ -1614,7 +1635,7 @@ void makeMEMPerformancePlots_bbww_dilepton()
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
         numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset_wRatio,
-        true, yMin_wRatio[histogramKey], yMax[histogramKey], 1. - 0.29, 1. + 0.29, yAxisTitle[histogramKey], showHistograms_yAxisOffset_wRatio,
+        true, yMin_wRatio[histogramKey], yMax[histogramKey], 1. - 0.59, 1. + 0.59, yAxisTitle[histogramKey], showHistograms_yAxisOffset_wRatio,
         Form("hh_bbwwMEM_dilepton_effectOfSmearing_%s_signal.pdf", histogramKey.data()));
       showHistograms_wRatio(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
@@ -1630,7 +1651,7 @@ void makeMEMPerformancePlots_bbww_dilepton()
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
         numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset_wRatio,
-        true, yMin_wRatio[histogramKey], yMax[histogramKey], 1. - 0.29, 1. + 0.29, yAxisTitle[histogramKey], showHistograms_yAxisOffset_wRatio,
+        true, yMin_wRatio[histogramKey], yMax[histogramKey], 1. - 0.59, 1. + 0.59, yAxisTitle[histogramKey], showHistograms_yAxisOffset_wRatio,
         Form("hh_bbwwMEM_dilepton_effectOfSmearing_%s_background.pdf", histogramKey.data()));
 
       TH1* histogram_missingBJet_noSmearing_genuineBJet_signal = loadHistogram(inputFile, 
@@ -1665,7 +1686,7 @@ void makeMEMPerformancePlots_bbww_dilepton()
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
         numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset_wRatio,
-        true, yMin_wRatio[histogramKey], yMax[histogramKey], 1. - 0.29, 1. + 0.29, yAxisTitle[histogramKey], showHistograms_yAxisOffset_wRatio,
+        true, yMin_wRatio[histogramKey], yMax[histogramKey], 1. - 0.59, 1. + 0.59, yAxisTitle[histogramKey], showHistograms_yAxisOffset_wRatio,
         Form("hh_bbwwMEM_dilepton_effectOfSmearing_%s_missingBJet_signal.pdf", histogramKey.data()));
       showHistograms_wRatio(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
@@ -1681,7 +1702,7 @@ void makeMEMPerformancePlots_bbww_dilepton()
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
         numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset_wRatio,
-        true, yMin_wRatio[histogramKey], yMax[histogramKey], 1. - 0.29, 1. + 0.29, yAxisTitle[histogramKey], showHistograms_yAxisOffset_wRatio,
+        true, yMin_wRatio[histogramKey], yMax[histogramKey], 1. - 0.59, 1. + 0.59, yAxisTitle[histogramKey], showHistograms_yAxisOffset_wRatio,
         Form("hh_bbwwMEM_dilepton_effectOfSmearing_%s_missingBJet_background.pdf", histogramKey.data()));
 
       if ( idxHistogram == kLR ) {
@@ -1716,7 +1737,7 @@ void makeMEMPerformancePlots_bbww_dilepton()
           labelText_signal_vs_background, 0.040,
           0.1600, 0.9525, 0.2900, 0.0600,
           10, 0., 1.01, "Signal Efficiency", showGraphs_xAxisOffset_wRatio,
-          true, 2.1e-4, 9.9e0, 1. - 0.29, 1. + 0.29, "Background Rate", showGraphs_yAxisOffset_wRatio, 
+          true, 2.1e-4, 9.9e0, 1. - 0.59, 1. + 0.59, "Background Rate", showGraphs_yAxisOffset_wRatio, 
           "hh_bbwwMEM_dilepton_effectOfSmearing_ROC.pdf");
 
         TGraph* graph_ROC_missingBJet_noSmearing_genuineBJet_logScale = compGraphROC(
@@ -1750,7 +1771,7 @@ void makeMEMPerformancePlots_bbww_dilepton()
           labelText_signal_vs_background, 0.040,
           0.1600, 0.9525, 0.2900, 0.0600,
           10, 0., 1.01, "Signal Efficiency", showGraphs_xAxisOffset_wRatio,
-          true, 2.1e-4, 9.9e0, 1. - 0.49, 1. + 0.49, "Background Rate", showGraphs_yAxisOffset_wRatio, 
+          true, 2.1e-4, 9.9e0, 1. - 0.59, 1. + 0.59, "Background Rate", showGraphs_yAxisOffset_wRatio, 
           "hh_bbwwMEM_dilepton_effectOfSmearing_ROC_missingBJet.pdf");
       }
     }

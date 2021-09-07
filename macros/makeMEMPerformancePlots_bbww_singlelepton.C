@@ -24,6 +24,10 @@ enum { kUndefined, kSignal_lo, kSignal_nlo, kBackground_lo, kBackground_nlo };
 
 enum { kProbSignal, kProbBackground, kLR };
 
+bool makePlots_png  = true;
+bool makePlots_pdf  = true;
+bool makePlots_root = true;
+
 std::string getHistogramKey(int idxHistogram)
 {
   if      ( idxHistogram == kProbSignal     ) return "probS";
@@ -242,9 +246,9 @@ void showHistograms(double canvasSizeX, double canvasSizeY,
   size_t idx = outputFileName.find_last_of('.');
   outputFileName_plot.append(std::string(outputFileName, 0, idx));
   //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
-  canvas->Print(std::string(outputFileName_plot).append(".png").data());
-  //canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
-  //canvas->Print(std::string(outputFileName_plot).append(".root").data());
+  if ( makePlots_png  ) canvas->Print(std::string(outputFileName_plot).append(".png").data());
+  if ( makePlots_pdf  ) canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
+  if ( makePlots_root ) canvas->Print(std::string(outputFileName_plot).append(".root").data());
 
   delete label;
   delete legend;
@@ -571,9 +575,9 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
   size_t idx = outputFileName.find_last_of('.');
   outputFileName_plot.append(std::string(outputFileName, 0, idx));
   //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
-  canvas->Print(std::string(outputFileName_plot).append(".png").data());
-  //canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
-  //canvas->Print(std::string(outputFileName_plot).append(".root").data());
+  if ( makePlots_png  ) canvas->Print(std::string(outputFileName_plot).append(".png").data());
+  if ( makePlots_pdf  ) canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
+  if ( makePlots_root ) canvas->Print(std::string(outputFileName_plot).append(".root").data());
 
   delete label;
   delete legend;
@@ -869,9 +873,9 @@ void showGraphs(double canvasSizeX, double canvasSizeY,
   size_t idx = outputFileName.find_last_of('.');
   outputFileName_plot.append(std::string(outputFileName, 0, idx));
   //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
-  canvas->Print(std::string(outputFileName_plot).append(".png").data());
-  //canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
-  //canvas->Print(std::string(outputFileName_plot).append(".root").data());
+  if ( makePlots_png  ) canvas->Print(std::string(outputFileName_plot).append(".png").data());
+  if ( makePlots_pdf  ) canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
+  if ( makePlots_root ) canvas->Print(std::string(outputFileName_plot).append(".root").data());
 
   delete label;
   delete legend;
@@ -1166,9 +1170,9 @@ void showGraphs_wRatio(double canvasSizeX, double canvasSizeY,
   size_t idx = outputFileName.find_last_of('.');
   outputFileName_plot.append(std::string(outputFileName, 0, idx));
   //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
-  canvas->Print(std::string(outputFileName_plot).append(".png").data());
-  //canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
-  //canvas->Print(std::string(outputFileName_plot).append(".root").data());
+  if ( makePlots_png  ) canvas->Print(std::string(outputFileName_plot).append(".png").data());
+  if ( makePlots_pdf  ) canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
+  if ( makePlots_root ) canvas->Print(std::string(outputFileName_plot).append(".root").data());
 
   delete label;
   delete legend;
@@ -1481,6 +1485,21 @@ void makeMEMPerformancePlots_bbww_singlelepton()
         true, yMin[histogramKey], yMax[histogramKey], yAxisTitle_missingBJet[histogramKey], showHistograms_yAxisOffset,
         Form("hh_bbwwMEM_singlelepton_effectOfFakes_%s_missingBJet_background.pdf", histogramKey.data()));
     
+      showHistograms(
+        showHistograms_canvasSizeX, showHistograms_canvasSizeY,
+        histogram_missingBJet_noSmearing_genuineBJet_2genuineWJets_signal, "Signal",
+        histogram_missingBJet_noSmearing_genuineBJet_2genuineWJets_background, "Background",
+        nullptr, "",
+        nullptr, "",
+        showHistograms_signal_vs_background_colors, showHistograms_signal_vs_background_markerStyles, showHistograms_signal_vs_background_markerSizes, 
+        showHistograms_signal_vs_background_lineStyles, showHistograms_signal_vs_background_lineWidths, showHistograms_drawOptions,
+        0.055, 0.23, 0.78, 0.33, 0.15, showHistograms_signal_vs_background_legendOptions,
+        "", 0.055,
+        0.1800, 0.9525, 0.2900, 0.0900,
+        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset,
+        true, yMin[histogramKey], yMax[histogramKey], yAxisTitle[histogramKey], showHistograms_yAxisOffset, 
+        Form("hh_bbwwMEM_singlelepton_effectOfFakes_%s_missingBJet.pdf", histogramKey.data()));
+
       TH1* histogram_missingWJet_noSmearing_2genuineBJets_genuineWJet_signal = loadHistogram(inputFile, 
         directories_part1[false][false], directories_part2_missingWJet[1], kSignal_lo, histogramName);
       TH1* histogram_missingWJet_noSmearing_2genuineBJets_fakeWJet_signal = loadHistogram(inputFile, 
@@ -1519,6 +1538,21 @@ void makeMEMPerformancePlots_bbww_singlelepton()
         numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle_missingWJet[histogramKey], showHistograms_xAxisOffset,
         true, yMin[histogramKey], yMax[histogramKey], yAxisTitle_missingWJet[histogramKey], showHistograms_yAxisOffset,
         Form("hh_bbwwMEM_singlelepton_effectOfFakes_%s_missingWJet_background.pdf", histogramKey.data()));
+
+      showHistograms(
+        showHistograms_canvasSizeX, showHistograms_canvasSizeY,
+        histogram_missingWJet_noSmearing_2genuineBJets_genuineWJet_signal, "Signal",
+        histogram_missingWJet_noSmearing_2genuineBJets_genuineWJet_background, "Background",
+        nullptr, "",
+        nullptr, "",
+        showHistograms_signal_vs_background_colors, showHistograms_signal_vs_background_markerStyles, showHistograms_signal_vs_background_markerSizes, 
+        showHistograms_signal_vs_background_lineStyles, showHistograms_signal_vs_background_lineWidths, showHistograms_drawOptions,
+        0.055, 0.23, 0.78, 0.33, 0.15, showHistograms_signal_vs_background_legendOptions,
+        "", 0.055,
+        0.1800, 0.9525, 0.2900, 0.0900,
+        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset,
+        true, yMin[histogramKey], yMax[histogramKey], yAxisTitle[histogramKey], showHistograms_yAxisOffset, 
+        Form("hh_bbwwMEM_singlelepton_effectOfFakes_%s_missingWJet.pdf", histogramKey.data()));
 
       TH1* histogram_missingBnWJet_noSmearing_genuineBJet_genuineWJet_signal = loadHistogram(inputFile, 
         directories_part1[false][false], directories_part2_missingBnWJet[1][1], kSignal_lo, histogramName);
@@ -1567,6 +1601,21 @@ void makeMEMPerformancePlots_bbww_singlelepton()
         true, yMin[histogramKey], yMax[histogramKey], yAxisTitle_missingBnWJet[histogramKey], showHistograms_yAxisOffset, 
         Form("hh_bbwwMEM_singlelepton_effectOfFakes_%s_missingBnWJet_background.pdf", histogramKey.data()));
     
+      showHistograms(
+        showHistograms_canvasSizeX, showHistograms_canvasSizeY,
+        histogram_missingBnWJet_noSmearing_genuineBJet_genuineWJet_signal, "Signal",
+        histogram_missingBnWJet_noSmearing_genuineBJet_genuineWJet_background, "Background",
+        nullptr, "",
+        nullptr, "",
+        showHistograms_signal_vs_background_colors, showHistograms_signal_vs_background_markerStyles, showHistograms_signal_vs_background_markerSizes, 
+        showHistograms_signal_vs_background_lineStyles, showHistograms_signal_vs_background_lineWidths, showHistograms_drawOptions,
+        0.055, 0.23, 0.78, 0.33, 0.15, showHistograms_signal_vs_background_legendOptions,
+        "", 0.055,
+        0.1800, 0.9525, 0.2900, 0.0900,
+        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset,
+        true, yMin[histogramKey], yMax[histogramKey], yAxisTitle[histogramKey], showHistograms_yAxisOffset, 
+        Form("hh_bbwwMEM_singlelepton_effectOfFakes_%s_missingBnWJet.pdf", histogramKey.data()));
+
       if ( idxHistogram == kLR ) {
         TGraph* graph_ROC_noSmearing_2genuineBJets_2genuineWJets_logScale = compGraphROC(
           "graph_ROC_noSmearing_2genuineBJets_2genuineWJets",
