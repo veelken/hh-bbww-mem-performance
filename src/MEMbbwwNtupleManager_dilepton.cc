@@ -46,15 +46,14 @@ MEMbbwwNtupleManager_dilepton::initializeBranches()
 void 
 MEMbbwwNtupleManager_dilepton::resetBranches()
 {
+  MEMbbwwNtupleManager::resetBranches();
+
   lepton1_.resetBranches();
   lepton2_.resetBranches();
   nleptons_     = 0;
   gen_lepton1_.resetBranches();
   gen_lepton2_.resetBranches();
   gen_nleptons_ = 0;
-
-  met_.resetBranches();
-  gen_met_.resetBranches();
 
   ptww_         = 0.;
   mww_          = 0.;
@@ -121,8 +120,8 @@ MEMbbwwNtupleManager_dilepton::read(const std::vector<mem::MeasuredParticle> & m
 }
 
 void 
-MEMbbwwNtupleManager_dilepton::read(const std::vector<GenJet *> & genBJets,
-                                    const std::vector<GenLepton *> & genLeptons,
+MEMbbwwNtupleManager_dilepton::read(const std::vector<const GenJet *> & genBJets,
+                                    const std::vector<const GenLepton *> & genLeptons,
                                     double genMEtPx, double genMEtPy)
 {
   if ( bjet1_.measuredJet_ ) gen_bjet1_.read(findGenMatch(bjet1_.measuredJet_, genBJets));

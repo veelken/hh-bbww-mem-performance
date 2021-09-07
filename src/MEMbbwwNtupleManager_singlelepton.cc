@@ -55,6 +55,8 @@ MEMbbwwNtupleManager_singlelepton::initializeBranches()
 void 
 MEMbbwwNtupleManager_singlelepton::resetBranches()
 {
+  MEMbbwwNtupleManager::resetBranches();
+
   wjet1_.resetBranches();
   wjet2_.resetBranches();
   nwjets_     = 0;
@@ -64,9 +66,6 @@ MEMbbwwNtupleManager_singlelepton::resetBranches()
 
   lepton_.resetBranches();
   gen_lepton_.resetBranches();
-
-  met_.resetBranches();
-  gen_met_.resetBranches();
 
   ptjj_       = 0.;
   drjj_       = 0.;
@@ -148,8 +147,8 @@ MEMbbwwNtupleManager_singlelepton::read(const std::vector<mem::MeasuredParticle>
 }
 
 void 
-MEMbbwwNtupleManager_singlelepton::read(const std::vector<GenJet *> & genBJets,
-                                        const std::vector<GenJet *> & genWJets,
+MEMbbwwNtupleManager_singlelepton::read(const std::vector<const GenJet *> & genBJets,
+                                        const std::vector<const GenJet *> & genWJets,
                                         const GenLepton * genLepton,
                                         double genMEtPx, double genMEtPy)
 {
@@ -163,7 +162,7 @@ MEMbbwwNtupleManager_singlelepton::read(const std::vector<GenJet *> & genBJets,
 
   if ( lepton_.measuredLepton_ )
   {
-    std::vector<GenLepton *> genLeptons = { const_cast<GenLepton *>(genLepton) };
+    std::vector<const GenLepton *> genLeptons = { genLepton };
     gen_lepton_.read(findGenMatch(lepton_.measuredLepton_, genLeptons));
   }
   gen_nleptons_ = countGenLeptons(&gen_lepton_);

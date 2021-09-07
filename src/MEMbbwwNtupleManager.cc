@@ -40,6 +40,7 @@ MEMbbwwNtupleManager::initializeBranches()
   tree_->Branch("memProbBerr", &memProbBerr_, Form("memProbBerr/%s", Traits<Double_t>::TYPE_NAME));
   tree_->Branch("memLR",       &memLR_,       Form("memLR/%s",       Traits<Double_t>::TYPE_NAME));
   tree_->Branch("memLRerr",    &memLRerr_,    Form("memLRerr/%s",    Traits<Double_t>::TYPE_NAME));
+  tree_->Branch("memCpuTime",  &memCpuTime_,  Form("memCpuTime/%s",  Traits<Float_t>::TYPE_NAME));
 
   bjet1_.initializeBranches(tree_);
   bjet2_.initializeBranches(tree_);
@@ -62,7 +63,7 @@ MEMbbwwNtupleManager::read(const EventInfo & eventInfo)
 }
 
 void 
-MEMbbwwNtupleManager::read(const MEMResultBase & memResult)
+MEMbbwwNtupleManager::read(const MEMResultBase & memResult, double memCpuTime)
 {
   memProbS_    = memResult.getProb_signal();
   memProbSerr_ = memResult.getProbErr_signal();
@@ -70,6 +71,13 @@ MEMbbwwNtupleManager::read(const MEMResultBase & memResult)
   memProbBerr_ = memResult.getProbErr_background();
   memLR_       = memResult.getLikelihoodRatio();
   memLRerr_    = memResult.getLikelihoodRatioErr();
+  memCpuTime_  = memCpuTime;
+}
+
+void MEMbbwwNtupleManager::fill()
+{
+  tree_->Fill();
+  resetBranches();
 }
 
 void 
@@ -85,6 +93,7 @@ MEMbbwwNtupleManager::resetBranches()
   memProbBerr_ = 0.;
   memLR_       = 0.;
   memLRerr_    = 0.;
+  memCpuTime_  = -1.;
 
   bjet1_.resetBranches();
   bjet2_.resetBranches();
@@ -92,6 +101,9 @@ MEMbbwwNtupleManager::resetBranches()
   gen_bjet1_.resetBranches();
   gen_bjet2_.resetBranches();
   gen_nbjets_  = 0;
+
+  met_.resetBranches();
+  gen_met_.resetBranches();
 
   ptbb_        = 0.;
   drbb_        = 0.;

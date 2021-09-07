@@ -19,14 +19,15 @@ class MEMbbwwNtupleManager
 {
 public:
   MEMbbwwNtupleManager(const std::string & outputTreeName);
-  ~MEMbbwwNtupleManager();
+  virtual ~MEMbbwwNtupleManager();
 
   void makeTree(TFileDirectory & dir);
 
-  void initializeBranches();
+  virtual void initializeBranches();
   void read(const EventInfo & eventInfo);
-  void read(const MEMResultBase & memResult);
-  void resetBranches();
+  void read(const MEMResultBase & memResult, double memCpuTime = -1.);
+  void fill();
+  virtual void resetBranches();
 
 protected:
 
@@ -60,6 +61,7 @@ protected:
   Double_t memProbBerr_;
   Double_t memLR_;
   Double_t memLRerr_;
+  Float_t  memCpuTime_;
 
   struct jetBranches
   {

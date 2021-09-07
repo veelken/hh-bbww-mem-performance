@@ -16,12 +16,13 @@ class MEMbbwwNtupleManager_dilepton : public MEMbbwwNtupleManager
   ~MEMbbwwNtupleManager_dilepton();
 
   void initializeBranches();
-  void resetBranches();
+  using MEMbbwwNtupleManager::read;
   void read(const std::vector<mem::MeasuredParticle> & measuredParticles,
             double measuredMEtPx, double measuredMEtPy, const TMatrixD & measuredMEtCov);
-  void read(const std::vector<GenJet *> & genBJets,
-            const std::vector<GenLepton *> & genLeptons,
+  void read(const std::vector<const GenJet *> & genBJets,
+            const std::vector<const GenLepton *> & genLeptons,
             double genMEtPx, double genMEtPy);
+  void resetBranches();
 
  protected:
   leptonBranches lepton1_;
