@@ -56,6 +56,7 @@
 #include "tthAnalysis/HiggsToTauTau/interface/histogramAuxFunctions.h" // fillWithOverFlow()
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/GenJetSmearer.h" // GenJetSmearer
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/GenMEtSmearer.h" // GenMEtSmearer
+#include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMbbwwNtupleManager_singlelepton.h" // MEMbbwwNtupleManager_singlelepton
 #include "hhAnalysis/multilepton/interface/AnalysisConfig_hh.h" // AnalysisConfig_hh
 
 #include <iostream> // std::cerr, std::fixed
@@ -356,6 +357,19 @@ int main(int argc, char* argv[])
   selHistManager->weights_ = new WeightHistManager(makeHistManager_cfg(process_string,
     Form("%s/sel/weights", histogramDir.data()), era_string, central_or_shift));
   selHistManager->weights_->bookHistograms(fs, { "genWeight", "pileupWeight" });
+
+  MEMbbwwNtupleManager_singlelepton* mem_ntuple = new MEMbbwwNtupleManager_singlelepton("mem");
+  mem_ntuple->makeTree(fs);
+  mem_ntuple->initializeBranches();
+  MEMbbwwNtupleManager_singlelepton* mem_ntuple_missingBJet = new MEMbbwwNtupleManager_singlelepton("mem_missingBJet");
+  mem_ntuple_missingBJet->makeTree(fs);
+  mem_ntuple_missingBJet->initializeBranches();
+  MEMbbwwNtupleManager_singlelepton* mem_ntuple_missingWJet = new MEMbbwwNtupleManager_singlelepton("mem_missingWJet");
+  mem_ntuple_missingWJet->makeTree(fs);
+  mem_ntuple_missingWJet->initializeBranches();
+  MEMbbwwNtupleManager_singlelepton* mem_ntuple_missingBnWJet = new MEMbbwwNtupleManager_singlelepton("mem_missingBnWJet");
+  mem_ntuple_missingBnWJet->makeTree(fs);
+  mem_ntuple_missingBnWJet->initializeBranches();
 
   int analyzedEntries = 0;
   int skippedEntries = 0;
@@ -919,6 +933,14 @@ int main(int argc, char* argv[])
 	        << " (CPU time = " << memCpuTime << ")" << std::endl;
     }
 
+    const GenLepton* genLeptonForMatching = ( genLeptonsForMatching_ptrs.size() >= 1 ) ? genLeptonsForMatching_ptrs[0] : nullptr;
+
+    mem_ntuple->read(eventInfo);
+    mem_ntuple->read(memResult, memCpuTime);
+    mem_ntuple->read(memMeasuredParticles, genMEt_smeared.px(), genMEt_smeared.py(), metCov);
+    mem_ntuple->read(genBJetsForMatching_ptrs, genWJetsForMatching_ptrs, genLeptonForMatching, genMEtPx, genMEtPy);
+    mem_ntuple->fill();
+
     clock.Reset();
     clock.Start("memAlgo_missingBJet");
     MEMbbwwAlgoSingleLepton memAlgo_missingBJet(sqrtS, pdfName, findFile(madgraphFileName_signal), findFile(madgraphFileName_background), memAlgo_verbosity);
@@ -945,6 +967,12 @@ int main(int argc, char* argv[])
                 << " +/- " << memResult_missingBJet.getLikelihoodRatioErr() 
 	        << " (CPU time = " << memCpuTime_missingBJet << ")" << std::endl;
     }
+
+    mem_ntuple_missingBJet->read(eventInfo);
+    mem_ntuple_missingBJet->read(memResult_missingBJet, memCpuTime_missingBJet);
+    mem_ntuple_missingBJet->read(memMeasuredParticles_missingBJet, genMEt_smeared.px(), genMEt_smeared.py(), metCov);
+    mem_ntuple_missingBJet->read(genBJetsForMatching_ptrs, genWJetsForMatching_ptrs, genLeptonForMatching, genMEtPx, genMEtPy);
+    mem_ntuple_missingBJet->fill();
 
     clock.Reset();
     clock.Start("memAlgo_missingWJet");
@@ -973,6 +1001,12 @@ int main(int argc, char* argv[])
 	        << " (CPU time = " << memCpuTime_missingWJet << ")" << std::endl;
     }
 
+    mem_ntuple_missingWJet->read(eventInfo);
+    mem_ntuple_missingWJet->read(memResult_missingWJet, memCpuTime_missingWJet);
+    mem_ntuple_missingWJet->read(memMeasuredParticles_missingWJet, genMEt_smeared.px(), genMEt_smeared.py(), metCov);
+    mem_ntuple_missingWJet->read(genBJetsForMatching_ptrs, genWJetsForMatching_ptrs, genLeptonForMatching, genMEtPx, genMEtPy);
+    mem_ntuple_missingWJet->fill();
+
     clock.Reset();
     clock.Start("memAlgo_missingBnWJet");
     MEMbbwwAlgoSingleLepton memAlgo_missingBnWJet(sqrtS, pdfName, findFile(madgraphFileName_signal), findFile(madgraphFileName_background), memAlgo_verbosity);
@@ -999,6 +1033,12 @@ int main(int argc, char* argv[])
                 << " +/- " << memResult_missingBnWJet.getLikelihoodRatioErr() 
 	        << " (CPU time = " << memCpuTime_missingBnWJet << ")" << std::endl;
     }
+
+    mem_ntuple_missingBnWJet->read(eventInfo);
+    mem_ntuple_missingBnWJet->read(memResult_missingBnWJet, memCpuTime_missingBnWJet);
+    mem_ntuple_missingBnWJet->read(memMeasuredParticles_missingBnWJet, genMEt_smeared.px(), genMEt_smeared.py(), metCov);
+    mem_ntuple_missingBnWJet->read(genBJetsForMatching_ptrs, genWJetsForMatching_ptrs, genLeptonForMatching, genMEtPx, genMEtPy);
+    mem_ntuple_missingBnWJet->fill();
     //---------------------------------------------------------------------------
 
     int numGenuineBJets = 0;
@@ -1073,6 +1113,11 @@ int main(int argc, char* argv[])
   delete lheInfoReader;
 
   delete genEvtHistManager_beforeCuts;
+
+  delete mem_ntuple;
+  delete mem_ntuple_missingBJet;
+  delete mem_ntuple_missingWJet;
+  delete mem_ntuple_missingBnWJet;
 
   delete inputTree;
 

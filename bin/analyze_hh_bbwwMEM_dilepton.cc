@@ -55,6 +55,7 @@
 #include "tthAnalysis/HiggsToTauTau/interface/histogramAuxFunctions.h" // fillWithOverFlow()
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/GenJetSmearer.h" // GenJetSmearer
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/GenMEtSmearer.h" // GenMEtSmearer
+#include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMbbwwNtupleManager_dilepton.h" // MEMbbwwNtupleManager_dilepton
 #include "hhAnalysis/multilepton/interface/AnalysisConfig_hh.h" // AnalysisConfig_hh
 
 #include <iostream> // std::cerr, std::fixed
@@ -285,6 +286,13 @@ int main(int argc, char* argv[])
   selHistManager->weights_ = new WeightHistManager(makeHistManager_cfg(process_string,
     Form("%s/sel/weights", histogramDir.data()), era_string, central_or_shift));
   selHistManager->weights_->bookHistograms(fs, { "genWeight", "pileupWeight" });
+
+  MEMbbwwNtupleManager_dilepton* mem_ntuple = new MEMbbwwNtupleManager_dilepton("mem");
+  mem_ntuple->makeTree(fs);
+  mem_ntuple->initializeBranches();
+  MEMbbwwNtupleManager_dilepton* mem_ntuple_missingBJet = new MEMbbwwNtupleManager_dilepton("mem_missingBJet");
+  mem_ntuple_missingBJet->makeTree(fs);
+  mem_ntuple_missingBJet->initializeBranches();
 
   int analyzedEntries = 0;
   int skippedEntries = 0;
@@ -717,6 +725,12 @@ int main(int argc, char* argv[])
 	        << " (CPU time = " << memCpuTime << ")" << std::endl;
     }
 
+    mem_ntuple->read(eventInfo);
+    mem_ntuple->read(memResult, memCpuTime);
+    mem_ntuple->read(memMeasuredParticles, genMEt_smeared.px(), genMEt_smeared.py(), metCov);
+    mem_ntuple->read(genBJetsForMatching_ptrs, genLeptonsForMatching_ptrs, genMEtPx, genMEtPy);
+    mem_ntuple->fill();
+
     clock.Reset();
     clock.Start("memAlgo_missingBJet");
     MEMbbwwAlgoDilepton memAlgo_missingBJet(sqrtS, pdfName, findFile(madgraphFileName_signal), findFile(madgraphFileName_background), memAlgo_verbosity);
@@ -741,6 +755,12 @@ int main(int argc, char* argv[])
                 << " +/- " << memResult_missingBJet.getLikelihoodRatioErr() 
 	        << " (CPU time = " << memCpuTime_missingBJet << ")" << std::endl;
     }
+
+    mem_ntuple_missingBJet->read(eventInfo);
+    mem_ntuple_missingBJet->read(memResult_missingBJet, memCpuTime_missingBJet);
+    mem_ntuple_missingBJet->read(memMeasuredParticles_missingBJet, genMEt_smeared.px(), genMEt_smeared.py(), metCov);
+    mem_ntuple_missingBJet->read(genBJetsForMatching_ptrs, genLeptonsForMatching_ptrs, genMEtPx, genMEtPy);
+    mem_ntuple_missingBJet->fill();
     //---------------------------------------------------------------------------
 
     int numGenuineBJets = 0;
@@ -793,6 +813,9 @@ int main(int argc, char* argv[])
   delete lheInfoReader;
 
   delete genEvtHistManager_beforeCuts;
+
+  delete mem_ntuple;
+  delete mem_ntuple_missingBJet;
 
   delete inputTree;
 
