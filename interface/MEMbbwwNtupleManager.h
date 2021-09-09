@@ -1,19 +1,20 @@
 #ifndef hhAnalysis_bbwwMEMPerformanceStudies_MEMbbwwNtupleManager_h
 #define hhAnalysis_bbwwMEMPerformanceStudies_MEMbbwwNtupleManager_h
 
-#include "CommonTools/Utils/interface/TFileDirectory.h"     // TFileDirectory
-#include "DataFormats/Math/interface/deltaR.h"              // deltaR
+#include "CommonTools/Utils/interface/TFileDirectory.h"                // TFileDirectory
+#include "DataFormats/Math/interface/deltaR.h"                         // deltaR
 
-#include "tthAnalysis/HiggsToTauTau/interface/EventInfo.h"  // EventInfo
-#include "tthAnalysis/HiggsToTauTau/interface/GenJet.h"     // GenJet
-#include "tthAnalysis/HiggsToTauTau/interface/GenLepton.h"  // GenLepton
-#include "tthAnalysis/HiggsToTauTau/interface/TypeTraits.h" // Traits<>
+#include "tthAnalysis/HiggsToTauTau/interface/EventInfo.h"             // EventInfo
+#include "tthAnalysis/HiggsToTauTau/interface/GenJet.h"                // GenJet
+#include "tthAnalysis/HiggsToTauTau/interface/GenLepton.h"             // GenLepton
+#include "tthAnalysis/HiggsToTauTau/interface/TypeTraits.h"            // Traits<>
 
-#include "hhAnalysis/bbwwMEM/interface/MEMResult.h"         // MEMResultBase
-#include "hhAnalysis/bbwwMEM/interface/MeasuredParticle.h"  // MeasuredParticle
+#include "hhAnalysis/bbwwMEM/interface/MEMResult.h"                    // MEMResultBase
+#include "hhAnalysis/bbwwMEM/interface/MeasuredParticle.h"             // MeasuredParticle
+#include "hhAnalysis/bbwwMEM/interface/measuredParticleAuxFunctions.h" // findGenMatch
 
-#include <TTree.h>                                          // TTree
-#include <TMatrixD.h>                                       // TMatrixD
+#include <TTree.h>                                                     // TTree
+#include <TMatrixD.h>                                                  // TMatrixD
 
 class MEMbbwwNtupleManager
 {
@@ -24,7 +25,7 @@ public:
   void makeTree(TFileDirectory & dir);
 
   virtual void initializeBranches();
-  void read(const EventInfo & eventInfo);
+  void read(const EventInfo & eventInfo, int barcode = -1);
   void read(const MEMResultBase & memResult, double memCpuTime = -1.);
   void fill();
   virtual void resetBranches();
@@ -33,23 +34,6 @@ protected:
 
   std::string outputTreeName_;
   TTree* tree_;
-
-  template <typename T>
-  const T * findGenMatch(const mem::MeasuredParticle * measuredParticle, const std::vector<T *> & genParticles)
-  {
-    const T * bestMatch = nullptr;
-    double dRmatch = 1.e+3;
-    for ( typename std::vector<T *>::const_iterator genParticle = genParticles.begin();
-          genParticle != genParticles.end(); ++genParticle ) {
-      double dR = deltaR(measuredParticle->eta(), measuredParticle->phi(), (*genParticle)->eta(), (*genParticle)->phi());
-      if ( dR < 0.3 && dR < dRmatch ) 
-      {
-        bestMatch = *genParticle;
-        dRmatch = dR;
-      }
-    }
-    return bestMatch;
-  }
 
   Int_t run_;
   Int_t ls_;
@@ -260,6 +244,8 @@ protected:
 
   metBranches met_;
   metBranches gen_met_;
+
+  int barcode_;
 
   // CV: define auxiliary variables for BDT regression training
   Float_t ptbb_;

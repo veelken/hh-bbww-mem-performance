@@ -152,18 +152,18 @@ MEMbbwwNtupleManager_singlelepton::read(const std::vector<const GenJet *> & genB
                                         const GenLepton * genLepton,
                                         double genMEtPx, double genMEtPy)
 {
-  if ( bjet1_.measuredJet_ ) gen_bjet1_.read(findGenMatch(bjet1_.measuredJet_, genBJets));
-  if ( bjet2_.measuredJet_ ) gen_bjet2_.read(findGenMatch(bjet2_.measuredJet_, genBJets));
+  if ( bjet1_.measuredJet_ ) gen_bjet1_.read(mem::findGenMatch(bjet1_.measuredJet_, genBJets));
+  if ( bjet2_.measuredJet_ ) gen_bjet2_.read(mem::findGenMatch(bjet2_.measuredJet_, genBJets));
   gen_nbjets_ = countGenJets(&gen_bjet1_, &gen_bjet2_);
 
-  if ( wjet1_.measuredJet_ ) gen_wjet1_.read(findGenMatch(wjet1_.measuredJet_, genWJets));
-  if ( wjet2_.measuredJet_ ) gen_wjet2_.read(findGenMatch(wjet2_.measuredJet_, genWJets));
+  if ( wjet1_.measuredJet_ ) gen_wjet1_.read(mem::findGenMatch(wjet1_.measuredJet_, genWJets));
+  if ( wjet2_.measuredJet_ ) gen_wjet2_.read(mem::findGenMatch(wjet2_.measuredJet_, genWJets));
   gen_nwjets_ = countGenJets(&gen_wjet1_, &gen_wjet2_);
 
   if ( lepton_.measuredLepton_ )
   {
     std::vector<const GenLepton *> genLeptons = { genLepton };
-    gen_lepton_.read(findGenMatch(lepton_.measuredLepton_, genLeptons));
+    gen_lepton_.read(mem::findGenMatch(lepton_.measuredLepton_, genLeptons));
   }
   gen_nleptons_ = countGenLeptons(&gen_lepton_);
 

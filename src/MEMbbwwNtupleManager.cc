@@ -11,6 +11,7 @@ MEMbbwwNtupleManager::MEMbbwwNtupleManager(const std::string & outputTreeName)
   , gen_bjet2_("gen_bjet2")
   , met_("met")
   , gen_met_("gen_met")
+  , barcode_(-1)
 {}
 
 MEMbbwwNtupleManager::~MEMbbwwNtupleManager()
@@ -49,17 +50,20 @@ MEMbbwwNtupleManager::initializeBranches()
   gen_bjet2_.initializeBranches(tree_);
   tree_->Branch("gen_nbjets",  &gen_nbjets_,  Form("gen_nbjets/%s",  Traits<Int_t>::TYPE_NAME));
   
+  tree_->Branch("barcode",     &barcode_,     Form("barcode/%s",     Traits<Int_t>::TYPE_NAME));
+
   tree_->Branch("ptbb",        &ptbb_,        Form("ptbb/%s",        Traits<Float_t>::TYPE_NAME));
   tree_->Branch("drbb",        &drbb_,        Form("drbb/%s",        Traits<Float_t>::TYPE_NAME));
   tree_->Branch("mbb",         &mbb_,         Form("mbb/%s",         Traits<Float_t>::TYPE_NAME));
 }
 
 void 
-MEMbbwwNtupleManager::read(const EventInfo & eventInfo)
+MEMbbwwNtupleManager::read(const EventInfo & eventInfo, int barcode)
 {
   run_         = eventInfo.run;
   ls_          = eventInfo.lumi;
   event_       = eventInfo.event;
+  barcode_     = barcode;
 }
 
 void 
@@ -104,6 +108,8 @@ MEMbbwwNtupleManager::resetBranches()
 
   met_.resetBranches();
   gen_met_.resetBranches();
+
+  barcode_     = -1;
 
   ptbb_        = 0.;
   drbb_        = 0.;
