@@ -65,10 +65,12 @@ protected:
     }
     void resetBranches()
     {
-      pt_   = 0.;
-      eta_  = 0.;
-      phi_  = 0.;
-      mass_ = 0.;
+      pt_          = 0.;
+      eta_         = 0.;
+      phi_         = 0.;
+      mass_        = 0.;
+      measuredJet_ = nullptr;
+      genJet_      = nullptr;
     }
     void read(const mem::MeasuredParticle * jet)
     {
@@ -143,10 +145,12 @@ protected:
     }
     void resetBranches()
     {
-      pt_    = 0.;
-      eta_   = 0.;
-      phi_   = 0.;
-      pdgId_ = 0;
+      pt_             = 0.;
+      eta_            = 0.;
+      phi_            = 0.;
+      pdgId_          = 0;
+      measuredLepton_ = nullptr;
+      genLepton_      = nullptr;
     }
     void read(const mem::MeasuredParticle * lepton)
     {
