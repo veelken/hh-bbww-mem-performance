@@ -80,11 +80,13 @@ MEMbbwwNtupleManager_dilepton::read(const std::vector<mem::MeasuredParticle> & m
   if ( measuredBJets.size() >= 1 ) bjet1_.read(measuredBJets[0]);
   if ( measuredBJets.size() >= 2 ) bjet2_.read(measuredBJets[1]);
   nbjets_ = countMeasuredJets(&bjet1_, &bjet2_);
-  
+  //std::cout << "nbjets = " << nbjets_ << std::endl;
+
   std::sort(measuredLeptons.begin(), measuredLeptons.end(), mem::isHigherPt);
   if ( measuredLeptons.size() >= 1 ) lepton1_.read(measuredLeptons[0]);
   if ( measuredLeptons.size() >= 2 ) lepton2_.read(measuredLeptons[1]);
   nleptons_ = countMeasuredLeptons(&lepton1_, &lepton2_);
+  //std::cout << "nleptons = " << nleptons_ << std::endl;
 
   met_.read(measuredMEtPx, measuredMEtPy, &measuredMEtCov);
 

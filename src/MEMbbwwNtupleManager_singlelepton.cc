@@ -96,15 +96,18 @@ MEMbbwwNtupleManager_singlelepton::read(const std::vector<mem::MeasuredParticle>
   if ( measuredBJets.size() >= 1 ) bjet1_.read(measuredBJets[0]);
   if ( measuredBJets.size() >= 2 ) bjet2_.read(measuredBJets[1]);
   nbjets_ = countMeasuredJets(&bjet1_, &bjet2_);
-  
+  //std::cout << "nbjets = " << nbjets_ << std::endl;
+
   std::sort(measuredWJets.begin(), measuredWJets.end(), mem::isHigherPt);
   if ( measuredWJets.size() >= 1 ) wjet1_.read(measuredWJets[0]);
   if ( measuredWJets.size() >= 2 ) wjet2_.read(measuredWJets[1]);
   nwjets_ = countMeasuredJets(&wjet1_, &wjet2_);
+  //std::cout << "nwjets = " << nwjets_ << std::endl;
 
   std::sort(measuredLeptons.begin(), measuredLeptons.end(), mem::isHigherPt);
   if ( measuredLeptons.size() >= 1 ) lepton_.read(measuredLeptons[0]);
   nleptons_ = countMeasuredLeptons(&lepton_);
+  //std::cout << "nleptons = " << nleptons_ << std::endl;
 
   met_.read(measuredMEtPx, measuredMEtPy, &measuredMEtCov);
 
