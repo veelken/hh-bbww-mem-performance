@@ -136,7 +136,7 @@ MEMbbwwNtupleManager_singlelepton::read(const std::vector<mem::MeasuredParticle>
     if ( lepton_.measuredLepton_ )
     {
       const mem::MeasuredParticle * lepton = lepton_.measuredLepton_;
-      math::PtEtaPhiMLorentzVector leptonP4(lepton->pt(), lepton->eta(), lepton->phi(), lepton->mass());
+      math::PtEtaPhiMLorentzVector leptonP4(lepton->cone_pt(), lepton->eta(), lepton->phi(), lepton->mass());
       double metPt = sqrt(met_.px_*met_.px_ + met_.py_*met_.py_);
       double metPhi = atan2(met_.py_, met_.px_);
       math::PtEtaPhiMLorentzVector metP4(metPt, 0., metPhi, 0.);

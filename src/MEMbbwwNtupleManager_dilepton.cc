@@ -105,9 +105,9 @@ MEMbbwwNtupleManager_dilepton::read(const std::vector<mem::MeasuredParticle> & m
   if ( lepton1_.measuredLepton_ && lepton2_.measuredLepton_ )
   {
     const mem::MeasuredParticle * lepton1 = lepton1_.measuredLepton_;
-    math::PtEtaPhiMLorentzVector lepton1P4(lepton1->pt(), lepton1->eta(), lepton1->phi(), lepton1->mass());
+    math::PtEtaPhiMLorentzVector lepton1P4(lepton1->cone_pt(), lepton1->eta(), lepton1->phi(), lepton1->mass());
     const mem::MeasuredParticle * lepton2 = lepton2_.measuredLepton_;
-    math::PtEtaPhiMLorentzVector lepton2P4(lepton2->pt(), lepton2->eta(), lepton2->phi(), lepton2->mass());
+    math::PtEtaPhiMLorentzVector lepton2P4(lepton2->cone_pt(), lepton2->eta(), lepton2->phi(), lepton2->mass());
     double metPt = sqrt(met_.px_*met_.px_ + met_.py_*met_.py_);
     double metPhi = atan2(met_.py_, met_.px_);
     math::PtEtaPhiMLorentzVector metP4(metPt, 0., metPhi, 0.);
