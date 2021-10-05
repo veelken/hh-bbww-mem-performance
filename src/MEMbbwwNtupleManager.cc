@@ -32,8 +32,8 @@ MEMbbwwNtupleManager::initializeBranches()
   assert(tree_);
 
   tree_->Branch("run",         &run_,         Form("run/%s",         Traits<UInt_t>::TYPE_NAME));
-  tree_->Branch("ls",          &ls_,          Form("run/%s",         Traits<UInt_t>::TYPE_NAME));
-  tree_->Branch("event",       &event_,       Form("run/%s",         Traits<ULong64_t>::TYPE_NAME));
+  tree_->Branch("ls",          &ls_,          Form("ls/%s",          Traits<UInt_t>::TYPE_NAME));
+  tree_->Branch("event",       &event_,       Form("event/%s",       Traits<ULong64_t>::TYPE_NAME));
   
   tree_->Branch("memProbS",    &memProbS_,    Form("memProbS/%s",    Traits<Double_t>::TYPE_NAME));
   tree_->Branch("memProbSerr", &memProbSerr_, Form("memProbSerr/%s", Traits<Double_t>::TYPE_NAME));
