@@ -9,9 +9,7 @@
 #include "tthAnalysis/HiggsToTauTau/interface/GenLepton.h"             // GenLepton
 #include "tthAnalysis/HiggsToTauTau/interface/TypeTraits.h"            // Traits<>
 
-#include "hhAnalysis/bbwwMEM/interface/MEMResult.h"                    // MEMResultBase
-#include "hhAnalysis/bbwwMEM/interface/MeasuredParticle.h"             // MeasuredParticle
-#include "hhAnalysis/bbwwMEM/interface/measuredParticleAuxFunctions.h" // findGenMatch
+#include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMEvent.h"   // MEMEvent
 
 #include <TTree.h>                                                     // TTree
 #include <TMatrixD.h>                                                  // TMatrixD
@@ -25,8 +23,7 @@ public:
   void makeTree(TFileDirectory & dir);
 
   virtual void initializeBranches();
-  void read(const EventInfo & eventInfo, int barcode = -1);
-  void read(const MEMResultBase & memResult, double memCpuTime = -1.);
+  virtual void read(const MEMEvent & memEvent);
   void fill();
   virtual void resetBranches();
 
@@ -39,6 +36,10 @@ protected:
   Int_t ls_;
   Long64_t event_;
 
+  Float_t genWeight_;
+
+  Bool_t isSignal_;
+
   Double_t memProbS_;
   Double_t memProbSerr_;
   Double_t memProbB_;
@@ -47,53 +48,37 @@ protected:
   Double_t memLRerr_;
   Float_t  memCpuTime_;
 
-  struct jetBranches
+  struct genJetBranches
   {
-    jetBranches(const std::string & branchName)
+    genJetBranches(const std::string & branchName)
       : branchName_(branchName)
-      , measuredJet_(nullptr)
-      , genJet_(nullptr)
+    {
+      resetBranches();
+    }
+    virtual ~genJetBranches()
     {}
-    ~jetBranches()
-    {}
-    void initializeBranches(TTree * tree)
+    virtual void initializeBranches(TTree * tree)
     {
       tree->Branch(Form("%s_pt",   branchName_.c_str()), &pt_,   Form("%s_pt/%s",   branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
       tree->Branch(Form("%s_eta",  branchName_.c_str()), &eta_,  Form("%s_eta/%s",  branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
       tree->Branch(Form("%s_phi",  branchName_.c_str()), &phi_,  Form("%s_phi/%s",  branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
       tree->Branch(Form("%s_mass", branchName_.c_str()), &mass_, Form("%s_mass/%s", branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
     }
-    void resetBranches()
+    virtual void resetBranches()
     {
-      pt_          = 0.;
-      eta_         = 0.;
-      phi_         = 0.;
-      mass_        = 0.;
-      measuredJet_ = nullptr;
-      genJet_      = nullptr;
+      pt_   = 0.;
+      eta_  = 0.;
+      phi_  = 0.;
+      mass_ = 0.;
     }
-    void read(const mem::MeasuredParticle * jet)
+    virtual void read(const GenJet * jet)
     {
       if ( jet )
       {
-        pt_          = jet->pt();
-        eta_         = jet->eta();
-        phi_         = jet->phi();
-        mass_        = jet->mass();
-        measuredJet_ = jet;
-        genJet_      = nullptr;
-      }
-    }
-    void read(const GenJet * jet)
-    {
-      if ( jet )
-      {
-        pt_          = jet->p4().pt();
-        eta_         = jet->p4().eta();
-        phi_         = jet->p4().phi();
-        mass_        = jet->p4().mass();
-        measuredJet_ = nullptr;
-        genJet_      = jet;
+        pt_   = jet->p4().pt();
+        eta_  = jet->p4().eta();
+        phi_  = jet->p4().phi();
+        mass_ = jet->p4().mass();
       }
     }
     std::string branchName_;
@@ -101,83 +86,78 @@ protected:
     Float_t eta_;
     Float_t phi_;
     Float_t mass_;
-    const mem::MeasuredParticle * measuredJet_;
-    const GenJet * genJet_;
   };
-
-  int countMeasuredJets(const jetBranches * jet1, const jetBranches * jet2)
+  struct measuredJetBranches : public genJetBranches
   {
-    int numJets = 0;
-    if ( jet1 && jet1->measuredJet_ ) ++numJets;
-    if ( jet2 && jet2->measuredJet_ ) ++numJets;
-    return numJets;
-  }
-  int countGenJets(const jetBranches * jet1, const jetBranches * jet2)
-  {
-    int numJets = 0;
-    if ( jet1 && jet1->genJet_ ) ++numJets;
-    if ( jet2 && jet2->genJet_ ) ++numJets;
-    return numJets;
-  }
-  
-  jetBranches bjet1_;
-  jetBranches bjet2_;
-  Int_t nbjets_;
-  jetBranches gen_bjet1_;
-  jetBranches gen_bjet2_;
-  Int_t gen_nbjets_;
-
-  struct leptonBranches
-  {
-    leptonBranches(const std::string & branchName)
-      : branchName_(branchName)
-      , measuredLepton_(nullptr)
-      , genLepton_(nullptr)
-    {}
-    ~leptonBranches()
+    measuredJetBranches(const std::string & branchName)
+      : genJetBranches(branchName)
+    {
+      resetBranches();
+    }
+    ~measuredJetBranches()
     {}
     void initializeBranches(TTree * tree)
+    {
+      genJetBranches::initializeBranches(tree);
+      tree->Branch(Form("%s_isGenMatched", branchName_.c_str()), &isGenMatched_, Form("%s_isGenMatched/%s", branchName_.c_str(), Traits<Bool_t>::TYPE_NAME));
+    }
+    void resetBranches()
+    {
+      genJetBranches::resetBranches();
+      isGenMatched_ = false;
+    }
+    void read(const mem::MeasuredParticle * jet, bool isGenMatched)
+    {
+      if ( jet )
+      {
+        pt_           = jet->pt();
+        eta_          = jet->eta();
+        phi_          = jet->phi();
+        mass_         = jet->mass();
+        isGenMatched_ = isGenMatched;
+      }
+    }
+    bool isGenMatched_;
+  };
+
+  measuredJetBranches bjet1_;
+  measuredJetBranches bjet2_;
+  Int_t nbjets_;
+  genJetBranches gen_bjet1_;
+  genJetBranches gen_bjet2_;
+  Int_t gen_nbjets_;
+
+  struct genLeptonBranches
+  {
+    genLeptonBranches(const std::string & branchName)
+      : branchName_(branchName)
+    {
+      resetBranches();
+    }
+    virtual ~genLeptonBranches()
+    {}
+    virtual void initializeBranches(TTree * tree)
     {
       tree->Branch(Form("%s_pt",    branchName_.c_str()), &pt_,    Form("%s_pt/%s",    branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
       tree->Branch(Form("%s_eta",   branchName_.c_str()), &eta_,   Form("%s_eta/%s",   branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
       tree->Branch(Form("%s_phi",   branchName_.c_str()), &phi_,   Form("%s_phi/%s",   branchName_.c_str(), Traits<Float_t>::TYPE_NAME));
       tree->Branch(Form("%s_pdgId", branchName_.c_str()), &pdgId_, Form("%s_pdgId/%s", branchName_.c_str(), Traits<Int_t>::TYPE_NAME));
     }
-    void resetBranches()
+    virtual void resetBranches()
     {
-      pt_             = 0.;
-      eta_            = 0.;
-      phi_            = 0.;
-      pdgId_          = 0;
-      measuredLepton_ = nullptr;
-      genLepton_      = nullptr;
+      pt_    = 0.;
+      eta_   = 0.;
+      phi_   = 0.;
+      pdgId_ = 0;
     }
-    void read(const mem::MeasuredParticle * lepton)
+    virtual void read(const GenLepton * lepton)
     {
       if ( lepton )
       {
-        pt_             = lepton->pt();
-        eta_            = lepton->eta();
-        phi_            = lepton->phi();
-        if      ( lepton->type() == mem::MeasuredParticle::kElectron && lepton->charge() < 0 ) pdgId_ = +11;
-        else if ( lepton->type() == mem::MeasuredParticle::kElectron && lepton->charge() > 0 ) pdgId_ = -11;
-        else if ( lepton->type() == mem::MeasuredParticle::kMuon     && lepton->charge() < 0 ) pdgId_ = +13;
-        else if ( lepton->type() == mem::MeasuredParticle::kMuon     && lepton->charge() > 0 ) pdgId_ = -13;
-        else assert(0);
-        measuredLepton_ = lepton;
-        genLepton_      = nullptr;
-      }
-    }
-    void read(const GenLepton * lepton)
-    {
-      if ( lepton )
-      {
-        pt_             = lepton->p4().pt();
-        eta_            = lepton->p4().eta();
-        phi_            = lepton->p4().phi();
-        pdgId_          = lepton->pdgId();
-        measuredLepton_ = nullptr;
-        genLepton_      = lepton;
+        pt_    = lepton->p4().pt();
+        eta_   = lepton->p4().eta();
+        phi_   = lepton->p4().phi();
+        pdgId_ = lepton->pdgId();
       }
     }
     std::string branchName_;
@@ -185,24 +165,43 @@ protected:
     Float_t eta_;
     Float_t phi_;
     Int_t pdgId_;
-    const mem::MeasuredParticle * measuredLepton_;
-    const GenLepton * genLepton_;
   };
-
-  int countMeasuredLeptons(const leptonBranches * lepton1, const leptonBranches * lepton2 = nullptr)
+  struct measuredLeptonBranches : public genLeptonBranches
   {
-    int numLeptons = 0;
-    if ( lepton1 && lepton1->measuredLepton_ ) ++numLeptons;
-    if ( lepton2 && lepton2->measuredLepton_ ) ++numLeptons;
-    return numLeptons;
-  }
-  int countGenLeptons(const leptonBranches * lepton1, const leptonBranches * lepton2 = nullptr)
-  {
-    int numLeptons = 0;
-    if ( lepton1 && lepton1->genLepton_ ) ++numLeptons;
-    if ( lepton2 && lepton2->genLepton_ ) ++numLeptons;
-    return numLeptons;
-  }
+    measuredLeptonBranches(const std::string & branchName)
+      : genLeptonBranches(branchName)
+    {
+      resetBranches();
+    }
+    ~measuredLeptonBranches()
+    {}
+    void initializeBranches(TTree * tree)
+    {
+      genLeptonBranches::initializeBranches(tree);
+      tree->Branch(Form("%s_isGenMatched", branchName_.c_str()), &isGenMatched_, Form("%s_isGenMatched/%s", branchName_.c_str(), Traits<Bool_t>::TYPE_NAME));
+    }
+    void resetBranches()
+    {
+      genLeptonBranches::resetBranches();
+      isGenMatched_ = false;
+    }
+    void read(const mem::MeasuredParticle * lepton, bool isGenMatched)
+    {
+      if ( lepton )
+      {
+        pt_  = lepton->pt();
+        eta_ = lepton->eta();
+        phi_ = lepton->phi();
+        if      ( lepton->type() == mem::MeasuredParticle::kElectron && lepton->charge() < 0 ) pdgId_ = +11;
+        else if ( lepton->type() == mem::MeasuredParticle::kElectron && lepton->charge() > 0 ) pdgId_ = -11;
+        else if ( lepton->type() == mem::MeasuredParticle::kMuon     && lepton->charge() < 0 ) pdgId_ = +13;
+        else if ( lepton->type() == mem::MeasuredParticle::kMuon     && lepton->charge() > 0 ) pdgId_ = -13;
+        else assert(0);
+        isGenMatched_ = isGenMatched;
+      }
+    }
+    bool isGenMatched_;
+  };
 
   struct metBranches
   {

@@ -55,7 +55,9 @@
 #include "tthAnalysis/HiggsToTauTau/interface/histogramAuxFunctions.h" // fillWithOverFlow()
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/GenJetSmearer.h" // GenJetSmearer
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/GenMEtSmearer.h" // GenMEtSmearer
+#include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMEvent_dilepton.h" // MEMEvent_dilepton
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMbbwwNtupleManager_dilepton.h" // MEMbbwwNtupleManager_dilepton
+#include "hhAnalysis/bbwwMEMPerformanceStudies/interface/memNtupleAuxFunctions_dilepton.h" // addGenMatches_dilepton
 #include "hhAnalysis/multilepton/interface/AnalysisConfig_hh.h" // AnalysisConfig_hh
 
 #include <iostream> // std::cerr, std::fixed
@@ -675,19 +677,36 @@ int main(int argc, char* argv[])
     memMeasuredParticles.push_back(memMeasuredBJet_lead);
     memMeasuredParticles.push_back(memMeasuredBJet_sublead);
     
+    MEMEvent_dilepton memEvent(
+      eventInfo, isSignal, 
+      &memMeasuredBJet_lead, &memMeasuredBJet_sublead, 
+      &memMeasuredLepton_lead, &memMeasuredLepton_sublead,
+      genMEt_smeared.px(), genMEt_smeared.py(), metCov);
+    addGenMatches_dilepton(memEvent, genBJetsForMatching_ptrs, genLeptonsForMatching_ptrs, genMEtPx, genMEtPy);
+
     std::vector<mem::MeasuredParticle> memMeasuredParticles_missingBJet;
     memMeasuredParticles_missingBJet.push_back(memMeasuredLepton_lead);
     memMeasuredParticles_missingBJet.push_back(memMeasuredLepton_sublead);
+    const mem::MeasuredParticle* memMeasuredBJet_missingBJet = nullptr;
     bool selGenBJet_isFake_missingBJet;
     double u = rnd.Uniform();
     assert(u >= 0. && u <= 1.);
     if ( u > 0.50 ) {
       memMeasuredParticles_missingBJet.push_back(memMeasuredBJet_lead);
+      memMeasuredBJet_missingBJet = &memMeasuredBJet_lead;
       selGenBJet_isFake_missingBJet = selGenBJet_lead_isFake;
     } else {
       memMeasuredParticles_missingBJet.push_back(memMeasuredBJet_sublead);
+      memMeasuredBJet_missingBJet = &memMeasuredBJet_sublead;
       selGenBJet_isFake_missingBJet = selGenBJet_sublead_isFake;
     }
+
+    MEMEvent_dilepton memEvent_missingBJet(
+      eventInfo, isSignal, 
+      memMeasuredBJet_missingBJet, nullptr,
+      &memMeasuredLepton_lead, &memMeasuredLepton_sublead,
+      genMEt_smeared.px(), genMEt_smeared.py(), metCov);
+    addGenMatches_dilepton(memEvent_missingBJet, genBJetsForMatching_ptrs, genLeptonsForMatching_ptrs, genMEtPx, genMEtPy);
 
     const double sqrtS = 13.e+3;
     const std::string pdfName = "MSTW2008lo68cl";
@@ -725,10 +744,10 @@ int main(int argc, char* argv[])
 	        << " (CPU time = " << memCpuTime << ")" << std::endl;
     }
 
-    mem_ntuple->read(eventInfo);
-    mem_ntuple->read(memResult, memCpuTime);
-    mem_ntuple->read(memMeasuredParticles, genMEt_smeared.px(), genMEt_smeared.py(), metCov);
-    mem_ntuple->read(genBJetsForMatching_ptrs, genLeptonsForMatching_ptrs, genMEtPx, genMEtPy);
+    (const_cast<MEMEvent_dilepton*>(&memEvent))->set_memResult(memResult);
+    (const_cast<MEMEvent_dilepton*>(&memEvent))->set_memCpuTime(memCpuTime);
+
+    mem_ntuple->read(memEvent);
     mem_ntuple->fill();
 
     clock.Reset();
@@ -756,10 +775,10 @@ int main(int argc, char* argv[])
 	        << " (CPU time = " << memCpuTime_missingBJet << ")" << std::endl;
     }
 
-    mem_ntuple_missingBJet->read(eventInfo);
-    mem_ntuple_missingBJet->read(memResult_missingBJet, memCpuTime_missingBJet);
-    mem_ntuple_missingBJet->read(memMeasuredParticles_missingBJet, genMEt_smeared.px(), genMEt_smeared.py(), metCov);
-    mem_ntuple_missingBJet->read(genBJetsForMatching_ptrs, genLeptonsForMatching_ptrs, genMEtPx, genMEtPy);
+    (const_cast<MEMEvent_dilepton*>(&memEvent_missingBJet))->set_memResult(memResult_missingBJet);
+    (const_cast<MEMEvent_dilepton*>(&memEvent_missingBJet))->set_memCpuTime(memCpuTime_missingBJet);
+
+    mem_ntuple_missingBJet->read(memEvent_missingBJet);
     mem_ntuple_missingBJet->fill();
     //---------------------------------------------------------------------------
 

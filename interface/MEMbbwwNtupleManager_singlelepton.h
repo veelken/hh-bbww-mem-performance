@@ -1,13 +1,8 @@
 #ifndef hhAnalysis_bbwwMEMPerformanceStudies_MEMbbwwNtupleManager_singlelepton_h
 #define hhAnalysis_bbwwMEMPerformanceStudies_MEMbbwwNtupleManager_singlelepton_h
 
-#include "tthAnalysis/HiggsToTauTau/interface/GenJet.h"                          // GenJet
-#include "tthAnalysis/HiggsToTauTau/interface/GenLepton.h"                       // GenLepton
-
-#include "hhAnalysis/bbwwMEM/interface/MeasuredParticle.h"                       // MeasuredParticle
-#include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMbbwwNtupleManager.h" // MEMbbwwNtupleManager
-
-#include <TMatrixD.h>                                                            // TMatrixD
+#include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMbbwwNtupleManager.h"  // MEMbbwwNtupleManager
+#include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMEvent_singlelepton.h" // MEMEvent_singlelepton
 
 class MEMbbwwNtupleManager_singlelepton : public MEMbbwwNtupleManager
 {
@@ -16,26 +11,20 @@ class MEMbbwwNtupleManager_singlelepton : public MEMbbwwNtupleManager
   ~MEMbbwwNtupleManager_singlelepton();
 
   void initializeBranches();
-  using MEMbbwwNtupleManager::read;
-  void read(const std::vector<mem::MeasuredParticle> & measuredParticles,
-            double measuredMEtPx, double measuredMEtPy, const TMatrixD & measuredMEtCov);
-  void read(const std::vector<const GenJet *> & genBJets,
-            const std::vector<const GenJet *> & genWJets,
-            const GenLepton * genLepton,
-            double genMEtPx, double genMEtPy);
+  void read(const MEMEvent_singlelepton & memEvent);
   void resetBranches();
 
  protected:
-  jetBranches wjet1_;
-  jetBranches wjet2_;
+  measuredJetBranches wjet1_;
+  measuredJetBranches wjet2_;
   Int_t nwjets_;
-  jetBranches gen_wjet1_;
-  jetBranches gen_wjet2_;
+  genJetBranches gen_wjet1_;
+  genJetBranches gen_wjet2_;
   Int_t gen_nwjets_;
 
-  leptonBranches lepton_;
+  measuredLeptonBranches lepton_;
   Int_t nleptons_;
-  leptonBranches gen_lepton_;
+  genLeptonBranches gen_lepton_;
   Int_t gen_nleptons_;
 
   // CV: define auxiliary variables for BDT regression training

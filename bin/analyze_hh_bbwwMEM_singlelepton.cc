@@ -56,7 +56,9 @@
 #include "tthAnalysis/HiggsToTauTau/interface/histogramAuxFunctions.h" // fillWithOverFlow()
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/GenJetSmearer.h" // GenJetSmearer
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/GenMEtSmearer.h" // GenMEtSmearer
+#include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMEvent_singlelepton.h" // MEMEvent_singlelepton
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMbbwwNtupleManager_singlelepton.h" // MEMbbwwNtupleManager_singlelepton
+#include "hhAnalysis/bbwwMEMPerformanceStudies/interface/memNtupleAuxFunctions_singlelepton.h" // addGenMatches_singlelepton
 #include "hhAnalysis/multilepton/interface/AnalysisConfig_hh.h" // AnalysisConfig_hh
 
 #include <iostream> // std::cerr, std::fixed
@@ -842,58 +844,102 @@ int main(int argc, char* argv[])
     memMeasuredParticles.push_back(memMeasuredWJet_lead);
     memMeasuredParticles.push_back(memMeasuredWJet_sublead);
     
+    MEMEvent_singlelepton memEvent(
+      eventInfo, isSignal, 
+      &memMeasuredBJet_lead, &memMeasuredBJet_sublead,
+      &memMeasuredWJet_lead, &memMeasuredWJet_sublead,
+      &memMeasuredLepton,
+      genMEt_smeared.px(), genMEt_smeared.py(), metCov);
+    addGenMatches_singlelepton(memEvent, genBJetsForMatching_ptrs, genWJetsForMatching_ptrs, genLeptonsForMatching_ptrs, genMEtPx, genMEtPy);
+
     std::vector<mem::MeasuredParticle> memMeasuredParticles_missingBJet;
     memMeasuredParticles_missingBJet.push_back(memMeasuredLepton);
+    const mem::MeasuredParticle* memMeasuredBJet_missingBJet = nullptr;
     bool selGenBJet_isFake_missingBJet;
     double u1 = rnd.Uniform();
     assert(u1 >= 0. && u1 <= 1.);
     if ( u1 > 0.50 ) {
       memMeasuredParticles_missingBJet.push_back(memMeasuredBJet_lead);
+      memMeasuredBJet_missingBJet = &memMeasuredBJet_lead;
       selGenBJet_isFake_missingBJet = selGenBJet_lead_isFake;
     } else {
       memMeasuredParticles_missingBJet.push_back(memMeasuredBJet_sublead);
+      memMeasuredBJet_missingBJet = &memMeasuredBJet_sublead;
       selGenBJet_isFake_missingBJet = selGenBJet_sublead_isFake;
     }
     memMeasuredParticles_missingBJet.push_back(memMeasuredWJet_lead);
     memMeasuredParticles_missingBJet.push_back(memMeasuredWJet_sublead);
 
+    MEMEvent_singlelepton memEvent_missingBJet(
+      eventInfo, isSignal, 
+      memMeasuredBJet_missingBJet, nullptr,
+      &memMeasuredWJet_lead, &memMeasuredWJet_sublead,
+      &memMeasuredLepton,
+      genMEt_smeared.px(), genMEt_smeared.py(), metCov);
+    addGenMatches_singlelepton(memEvent_missingBJet, genBJetsForMatching_ptrs, genWJetsForMatching_ptrs, genLeptonsForMatching_ptrs, genMEtPx, genMEtPy);
+
     std::vector<mem::MeasuredParticle> memMeasuredParticles_missingWJet;
     memMeasuredParticles_missingWJet.push_back(memMeasuredLepton);
     memMeasuredParticles_missingWJet.push_back(memMeasuredBJet_lead);
     memMeasuredParticles_missingWJet.push_back(memMeasuredBJet_sublead);
+    const mem::MeasuredParticle* memMeasuredWJet_missingWJet = nullptr;
     bool selGenWJet_isFake_missingWJet;
     double u2 = rnd.Uniform();
     assert(u2 >= 0. && u2 <= 1.);
     if ( u2 > 0.50 ) {
       memMeasuredParticles_missingWJet.push_back(memMeasuredWJet_lead);
+      memMeasuredWJet_missingWJet = &memMeasuredWJet_lead;
       selGenWJet_isFake_missingWJet = selGenWJet_lead_isFake;
     } else {
       memMeasuredParticles_missingWJet.push_back(memMeasuredWJet_sublead);
+      memMeasuredWJet_missingWJet = &memMeasuredWJet_sublead;
       selGenWJet_isFake_missingWJet = selGenWJet_sublead_isFake;
     }
 
+    MEMEvent_singlelepton memEvent_missingWJet(
+      eventInfo, isSignal, 
+      &memMeasuredBJet_lead, &memMeasuredBJet_sublead,
+      memMeasuredWJet_missingWJet, nullptr,
+      &memMeasuredLepton,
+      genMEt_smeared.px(), genMEt_smeared.py(), metCov);
+    addGenMatches_singlelepton(memEvent_missingWJet, genBJetsForMatching_ptrs, genWJetsForMatching_ptrs, genLeptonsForMatching_ptrs, genMEtPx, genMEtPy);
+
     std::vector<mem::MeasuredParticle> memMeasuredParticles_missingBnWJet;
     memMeasuredParticles_missingBnWJet.push_back(memMeasuredLepton);
+    const mem::MeasuredParticle* memMeasuredBJet_missingBnWJet = nullptr;
     bool selGenBJet_isFake_missingBnWJet;
     double u3 = rnd.Uniform();
     assert(u3 >= 0. && u3 <= 1.);
     if ( u3 > 0.50 ) {
       memMeasuredParticles_missingBnWJet.push_back(memMeasuredBJet_lead);
+      memMeasuredBJet_missingBnWJet = &memMeasuredBJet_lead;
       selGenBJet_isFake_missingBnWJet = selGenBJet_lead_isFake;
     } else {
       memMeasuredParticles_missingBnWJet.push_back(memMeasuredBJet_sublead);
+      memMeasuredBJet_missingBnWJet = &memMeasuredBJet_sublead;
       selGenBJet_isFake_missingBnWJet = selGenBJet_sublead_isFake;
     }
+    const mem::MeasuredParticle* memMeasuredWJet_missingBnWJet = nullptr;
     bool selGenWJet_isFake_missingBnWJet;
     double u4 = rnd.Uniform();
     assert(u4 >= 0. && u4 <= 1.);
     if ( u4 > 0.50 ) {
       memMeasuredParticles_missingBnWJet.push_back(memMeasuredWJet_lead);
+      memMeasuredWJet_missingBnWJet = &memMeasuredWJet_lead;
       selGenWJet_isFake_missingBnWJet = selGenWJet_lead_isFake;
     } else {
       memMeasuredParticles_missingBnWJet.push_back(memMeasuredWJet_sublead);
+      memMeasuredWJet_missingBnWJet = &memMeasuredWJet_sublead;
       selGenWJet_isFake_missingBnWJet = selGenWJet_sublead_isFake;
     }
+
+    MEMEvent_singlelepton memEvent_missingBnWJet(
+      eventInfo, isSignal, 
+      memMeasuredBJet_missingBnWJet, nullptr,
+      memMeasuredWJet_missingBnWJet, nullptr,
+      &memMeasuredLepton,
+      genMEt_smeared.px(), genMEt_smeared.py(), metCov);
+    addGenMatches_singlelepton(memEvent_missingBnWJet, genBJetsForMatching_ptrs, genWJetsForMatching_ptrs, genLeptonsForMatching_ptrs, genMEtPx, genMEtPy);
 
     const double sqrtS = 13.e+3;
     const std::string pdfName = "MSTW2008lo68cl";
@@ -933,12 +979,10 @@ int main(int argc, char* argv[])
 	        << " (CPU time = " << memCpuTime << ")" << std::endl;
     }
 
-    const GenLepton* genLeptonForMatching = ( genLeptonsForMatching_ptrs.size() >= 1 ) ? genLeptonsForMatching_ptrs[0] : nullptr;
+    (const_cast<MEMEvent_singlelepton*>(&memEvent))->set_memResult(memResult);
+    (const_cast<MEMEvent_singlelepton*>(&memEvent))->set_memCpuTime(memCpuTime);
 
-    mem_ntuple->read(eventInfo);
-    mem_ntuple->read(memResult, memCpuTime);
-    mem_ntuple->read(memMeasuredParticles, genMEt_smeared.px(), genMEt_smeared.py(), metCov);
-    mem_ntuple->read(genBJetsForMatching_ptrs, genWJetsForMatching_ptrs, genLeptonForMatching, genMEtPx, genMEtPy);
+    mem_ntuple->read(memEvent);
     mem_ntuple->fill();
 
     clock.Reset();
@@ -968,10 +1012,10 @@ int main(int argc, char* argv[])
 	        << " (CPU time = " << memCpuTime_missingBJet << ")" << std::endl;
     }
 
-    mem_ntuple_missingBJet->read(eventInfo);
-    mem_ntuple_missingBJet->read(memResult_missingBJet, memCpuTime_missingBJet);
-    mem_ntuple_missingBJet->read(memMeasuredParticles_missingBJet, genMEt_smeared.px(), genMEt_smeared.py(), metCov);
-    mem_ntuple_missingBJet->read(genBJetsForMatching_ptrs, genWJetsForMatching_ptrs, genLeptonForMatching, genMEtPx, genMEtPy);
+    (const_cast<MEMEvent_singlelepton*>(&memEvent_missingBJet))->set_memResult(memResult_missingBJet);
+    (const_cast<MEMEvent_singlelepton*>(&memEvent_missingBJet))->set_memCpuTime(memCpuTime_missingBJet);
+
+    mem_ntuple_missingBJet->read(memEvent_missingBJet);
     mem_ntuple_missingBJet->fill();
 
     clock.Reset();
@@ -1001,10 +1045,10 @@ int main(int argc, char* argv[])
 	        << " (CPU time = " << memCpuTime_missingWJet << ")" << std::endl;
     }
 
-    mem_ntuple_missingWJet->read(eventInfo);
-    mem_ntuple_missingWJet->read(memResult_missingWJet, memCpuTime_missingWJet);
-    mem_ntuple_missingWJet->read(memMeasuredParticles_missingWJet, genMEt_smeared.px(), genMEt_smeared.py(), metCov);
-    mem_ntuple_missingWJet->read(genBJetsForMatching_ptrs, genWJetsForMatching_ptrs, genLeptonForMatching, genMEtPx, genMEtPy);
+    (const_cast<MEMEvent_singlelepton*>(&memEvent_missingWJet))->set_memResult(memResult_missingWJet);
+    (const_cast<MEMEvent_singlelepton*>(&memEvent_missingWJet))->set_memCpuTime(memCpuTime_missingWJet);
+
+    mem_ntuple_missingWJet->read(memEvent_missingWJet);
     mem_ntuple_missingWJet->fill();
 
     clock.Reset();
@@ -1034,10 +1078,10 @@ int main(int argc, char* argv[])
 	        << " (CPU time = " << memCpuTime_missingBnWJet << ")" << std::endl;
     }
 
-    mem_ntuple_missingBnWJet->read(eventInfo);
-    mem_ntuple_missingBnWJet->read(memResult_missingBnWJet, memCpuTime_missingBnWJet);
-    mem_ntuple_missingBnWJet->read(memMeasuredParticles_missingBnWJet, genMEt_smeared.px(), genMEt_smeared.py(), metCov);
-    mem_ntuple_missingBnWJet->read(genBJetsForMatching_ptrs, genWJetsForMatching_ptrs, genLeptonForMatching, genMEtPx, genMEtPy);
+    (const_cast<MEMEvent_singlelepton*>(&memEvent_missingBnWJet))->set_memResult(memResult_missingBnWJet);
+    (const_cast<MEMEvent_singlelepton*>(&memEvent_missingBnWJet))->set_memCpuTime(memCpuTime_missingBnWJet);
+
+    mem_ntuple_missingBnWJet->read(memEvent_missingBnWJet);
     mem_ntuple_missingBnWJet->fill();
     //---------------------------------------------------------------------------
 

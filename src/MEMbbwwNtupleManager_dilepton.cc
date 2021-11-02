@@ -3,7 +3,9 @@
 #include "tthAnalysis/HiggsToTauTau/interface/TypeTraits.h"           // Traits<T>::TYPE_NAME
 #include "tthAnalysis/HiggsToTauTau/interface/mvaInputVariables.h"    // comp_MT_met
 
-#include <DataFormats/Math/interface/LorentzVector.h> // math::PtEtaPhiMLorentzVector
+#include "DataFormats/Math/interface/LorentzVector.h" // math::PtEtaPhiMLorentzVector
+#include "DataFormats/Math/interface/deltaR.h"        // deltaR
+#include "DataFormats/Math/interface/deltaPhi.h"      // deltaPhi
 
 #include <algorithm> // std::sort
 #include <math.h>    // sqrt, atan2
@@ -12,8 +14,17 @@ MEMbbwwNtupleManager_dilepton::MEMbbwwNtupleManager_dilepton(const std::string &
   : MEMbbwwNtupleManager(outputTreeName)
   , lepton1_("lepton1")
   , lepton2_("lepton2")
+  , nleptons_(0)
   , gen_lepton1_("gen_lepton1")
   , gen_lepton2_("gen_lepton2")
+  , gen_nleptons_(0)
+  , ptww_(0.)
+  , mww_(0.)
+  , ptll_(0.)
+  , drll_(0.)
+  , dphill_(0.)
+  , mll_(0.)
+  , ptmiss_(0.)
 {}
 
 MEMbbwwNtupleManager_dilepton::~MEMbbwwNtupleManager_dilepton()
@@ -32,13 +43,12 @@ MEMbbwwNtupleManager_dilepton::initializeBranches()
   gen_lepton1_.initializeBranches(tree_);
   gen_lepton2_.initializeBranches(tree_);
   tree_->Branch("gen_nleptons", &gen_nleptons_, Form("gen_nleptons/%s", Traits<Int_t>::TYPE_NAME));
-
-  met_.initializeBranches(tree_);
-  gen_met_.initializeBranches(tree_);
-
+  
   tree_->Branch("ptww",   &ptww_,   Form("ptww/%s",   Traits<Float_t>::TYPE_NAME));
   tree_->Branch("mww",    &mww_,    Form("mww/%s",    Traits<Float_t>::TYPE_NAME));
   tree_->Branch("ptll",   &ptll_,   Form("ptll/%s",   Traits<Float_t>::TYPE_NAME));
+  tree_->Branch("drll",   &drll_,   Form("drll/%s",   Traits<Float_t>::TYPE_NAME));
+  tree_->Branch("dphill", &dphill_, Form("dphill/%s", Traits<Float_t>::TYPE_NAME));  
   tree_->Branch("mll",    &mll_,    Form("mll/%s",    Traits<Float_t>::TYPE_NAME));
   tree_->Branch("ptmiss", &ptmiss_, Form("ptmiss/%s", Traits<Float_t>::TYPE_NAME));
 }
@@ -58,81 +68,43 @@ MEMbbwwNtupleManager_dilepton::resetBranches()
   ptww_         = 0.;
   mww_          = 0.;
   ptll_         = 0.;
+  drll_         = 0.;
+  dphill_       = 0.;
   mll_          = 0.;
   ptmiss_       = 0.;
-
 }
 
 void 
-MEMbbwwNtupleManager_dilepton::read(const std::vector<mem::MeasuredParticle> & measuredParticles,
-                                    double measuredMEtPx, double measuredMEtPy, const TMatrixD & measuredMEtCov)
+MEMbbwwNtupleManager_dilepton::read(const MEMEvent_dilepton & memEvent)
 {
-  std::vector<const mem::MeasuredParticle *> measuredBJets;
-  std::vector<const mem::MeasuredParticle *> measuredLeptons;
-  for ( std::vector<mem::MeasuredParticle>::const_iterator measuredParticle = measuredParticles.begin();
-        measuredParticle != measuredParticles.end(); ++measuredParticle ) {
-    if      ( measuredParticle->type() == mem::MeasuredParticle::kElectron ) measuredLeptons.push_back(&(*measuredParticle));
-    else if ( measuredParticle->type() == mem::MeasuredParticle::kMuon     ) measuredLeptons.push_back(&(*measuredParticle));
-    else if ( measuredParticle->type() == mem::MeasuredParticle::kBJet     ) measuredBJets.push_back(&(*measuredParticle));
-  }
+  MEMbbwwNtupleManager::read(memEvent);
 
-  std::sort(measuredBJets.begin(), measuredBJets.end(), mem::isHigherPt);
-  if ( measuredBJets.size() >= 1 ) bjet1_.read(measuredBJets[0]);
-  if ( measuredBJets.size() >= 2 ) bjet2_.read(measuredBJets[1]);
-  nbjets_ = countMeasuredJets(&bjet1_, &bjet2_);
-  //std::cout << "nbjets = " << nbjets_ << std::endl;
+  lepton1_.read(memEvent.measuredLepton1(), memEvent.genLepton1() != nullptr);
+  lepton2_.read(memEvent.measuredLepton2(), memEvent.genLepton2() != nullptr);
+  nleptons_     = memEvent.numMeasuredLeptons();
+  gen_lepton1_.read(memEvent.genLepton1());
+  gen_lepton2_.read(memEvent.genLepton2());
+  gen_nleptons_ = memEvent.numGenLeptons();
 
-  std::sort(measuredLeptons.begin(), measuredLeptons.end(), mem::isHigherPt);
-  if ( measuredLeptons.size() >= 1 ) lepton1_.read(measuredLeptons[0]);
-  if ( measuredLeptons.size() >= 2 ) lepton2_.read(measuredLeptons[1]);
-  nleptons_ = countMeasuredLeptons(&lepton1_, &lepton2_);
-  //std::cout << "nleptons = " << nleptons_ << std::endl;
-
-  met_.read(measuredMEtPx, measuredMEtPy, &measuredMEtCov);
-
-  if ( bjet1_.measuredJet_ && bjet2_.measuredJet_ )
+  if ( memEvent.measuredLepton1() && memEvent.measuredLepton2() )
   {
-    const mem::MeasuredParticle * bjet1 = bjet1_.measuredJet_;
-    math::PtEtaPhiMLorentzVector bjet1P4(bjet1->pt(), bjet1->eta(), bjet1->phi(), bjet1->mass());
-    const mem::MeasuredParticle * bjet2 = bjet2_.measuredJet_;
-    math::PtEtaPhiMLorentzVector bjet2P4(bjet2->pt(), bjet2->eta(), bjet2->phi(), bjet2->mass());
-    math::PtEtaPhiMLorentzVector hbbP4 = bjet1P4 + bjet2P4;
-    ptbb_ = hbbP4.pt();
-    drbb_ = deltaR(bjet1P4, bjet2P4); 
-    mbb_ = hbbP4.mass();
-  }
-
-  if ( lepton1_.measuredLepton_ && lepton2_.measuredLepton_ )
-  {
-    const mem::MeasuredParticle * lepton1 = lepton1_.measuredLepton_;
+    const mem::MeasuredParticle * lepton1 = memEvent.measuredLepton1();
     math::PtEtaPhiMLorentzVector lepton1P4(lepton1->pt(), lepton1->eta(), lepton1->phi(), lepton1->mass());
-    const mem::MeasuredParticle * lepton2 = lepton2_.measuredLepton_;
+    const mem::MeasuredParticle * lepton2 = memEvent.measuredLepton2();
     math::PtEtaPhiMLorentzVector lepton2P4(lepton2->pt(), lepton2->eta(), lepton2->phi(), lepton2->mass());
-    double metPt = sqrt(met_.px_*met_.px_ + met_.py_*met_.py_);
-    double metPhi = atan2(met_.py_, met_.px_);
+    double metPx = memEvent.measuredMEtPx();
+    double metPy = memEvent.measuredMEtPy();
+    double metPt = sqrt(metPx*metPx + metPy*metPy);
+    double metPhi = atan2(metPy, metPx);
     math::PtEtaPhiMLorentzVector metP4(metPt, 0., metPhi, 0.);
     math::PtEtaPhiMLorentzVector hwwP4 = lepton1P4 + lepton2P4 + metP4;
-    ptww_ = hwwP4.pt();
-    mww_ = hwwP4.mass();
+    ptww_       = hwwP4.pt();
+    mww_        = hwwP4.mass();
     math::PtEtaPhiMLorentzVector dileptonP4 = lepton1P4 + lepton2P4;
-    ptll_ = dileptonP4.pt();
-    mll_ = dileptonP4.mass();
-    ptmiss_ = metPt;
+    ptll_       = dileptonP4.pt();
+    drll_       = deltaR(lepton1P4, lepton2P4);
+    dphill_     = deltaPhi(lepton1P4.phi(), lepton2P4.phi());
+    mll_        = dileptonP4.mass();
+    ptmiss_     = metPt;
   }
-}
-
-void 
-MEMbbwwNtupleManager_dilepton::read(const std::vector<const GenJet *> & genBJets,
-                                    const std::vector<const GenLepton *> & genLeptons,
-                                    double genMEtPx, double genMEtPy)
-{
-  if ( bjet1_.measuredJet_ ) gen_bjet1_.read(mem::findGenMatch(bjet1_.measuredJet_, genBJets));
-  if ( bjet2_.measuredJet_ ) gen_bjet2_.read(mem::findGenMatch(bjet2_.measuredJet_, genBJets));
-  gen_nbjets_ = countGenJets(&gen_bjet1_, &gen_bjet2_);
-
-  if ( lepton1_.measuredLepton_ ) gen_lepton1_.read(mem::findGenMatch(lepton1_.measuredLepton_, genLeptons));
-  if ( lepton2_.measuredLepton_ ) gen_lepton2_.read(mem::findGenMatch(lepton2_.measuredLepton_, genLeptons));
-  gen_nleptons_ = countGenLeptons(&gen_lepton1_, &gen_lepton2_);
-
-  gen_met_.read(genMEtPx, genMEtPy);
 }

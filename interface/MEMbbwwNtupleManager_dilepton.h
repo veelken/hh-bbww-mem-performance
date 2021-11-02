@@ -1,13 +1,8 @@
 #ifndef hhAnalysis_bbwwMEMPerformanceStudies_MEMbbwwNtupleManager_dilepton_h
 #define hhAnalysis_bbwwMEMPerformanceStudies_MEMbbwwNtupleManager_dilepton_h
 
-#include "tthAnalysis/HiggsToTauTau/interface/GenJet.h"                          // GenJet
-#include "tthAnalysis/HiggsToTauTau/interface/GenLepton.h"                       // GenLepton
-
-#include "hhAnalysis/bbwwMEM/interface/MeasuredParticle.h"                       // MeasuredParticle
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMbbwwNtupleManager.h" // MEMbbwwNtupleManager
-
-#include <TMatrixD.h>                                                            // TMatrixD
+#include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMEvent_dilepton.h"    // MEMEvent_dilepton
 
 class MEMbbwwNtupleManager_dilepton : public MEMbbwwNtupleManager
 {
@@ -16,26 +11,23 @@ class MEMbbwwNtupleManager_dilepton : public MEMbbwwNtupleManager
   ~MEMbbwwNtupleManager_dilepton();
 
   void initializeBranches();
-  using MEMbbwwNtupleManager::read;
-  void read(const std::vector<mem::MeasuredParticle> & measuredParticles,
-            double measuredMEtPx, double measuredMEtPy, const TMatrixD & measuredMEtCov);
-  void read(const std::vector<const GenJet *> & genBJets,
-            const std::vector<const GenLepton *> & genLeptons,
-            double genMEtPx, double genMEtPy);
+  void read(const MEMEvent_dilepton & memEvent);
   void resetBranches();
 
  protected:
-  leptonBranches lepton1_;
-  leptonBranches lepton2_;
+  measuredLeptonBranches lepton1_;
+  measuredLeptonBranches lepton2_;
   Int_t nleptons_;
-  leptonBranches gen_lepton1_;
-  leptonBranches gen_lepton2_;
+  genLeptonBranches gen_lepton1_;
+  genLeptonBranches gen_lepton2_;
   Int_t gen_nleptons_;
   
   // CV: define auxiliary variables for BDT regression training
   Float_t ptww_;
   Float_t mww_;
   Float_t ptll_;
+  Float_t drll_;
+  Float_t dphill_;
   Float_t mll_;
   Float_t ptmiss_;
 };
