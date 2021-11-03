@@ -46,6 +46,7 @@
 
 #include <boost/math/special_functions/sign.hpp> // boost::math::sign()
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMbbwwHistManager.h" // MEMbbwwHistManager
+#include "hhAnalysis/bbwwMEMPerformanceStudies/interface/EventHistManager_dilepton.h" // EventHistManager_dilepton
 #include "tthAnalysis/HiggsToTauTau/interface/LocalFileInPath.h" // LocalFileInPath
 #include "hhAnalysis/bbwwMEM/interface/MEMbbwwAlgoDilepton.h"
 #include "hhAnalysis/bbwwMEM/interface/MeasuredParticle.h" // MeasuredParticle
@@ -255,8 +256,11 @@ int main(int argc, char* argv[])
   struct selHistManagerType
   {
     MEMbbwwHistManagerDilepton* mem_2genuineBJets_;
+    EventHistManager_dilepton*  evt_2genuineBJets_;
     MEMbbwwHistManagerDilepton* mem_1genuineBJet_;
+    EventHistManager_dilepton*  evt_1genuineBJets_;
     MEMbbwwHistManagerDilepton* mem_0genuineBJets_;
+    EventHistManager_dilepton*  evt_0genuineBJets_;
     MEMbbwwHistManagerDilepton* mem_missingBJet_genuineBJet_;
     MEMbbwwHistManagerDilepton* mem_missingBJet_fakeBJet_;
     GenEvtHistManager* genEvtHistManager_afterCuts_;
@@ -267,12 +271,21 @@ int main(int argc, char* argv[])
   selHistManager->mem_2genuineBJets_ = new MEMbbwwHistManagerDilepton(makeHistManager_cfg(process_string,
     Form("%s/sel/mem_2genuineBJets", histogramDir.data()), era_string, central_or_shift));
   selHistManager->mem_2genuineBJets_->bookHistograms(fs);
+  selHistManager->evt_2genuineBJets_ = new EventHistManager_dilepton(makeHistManager_cfg(process_string,
+    Form("%s/sel/evt_2genuineBJets", histogramDir.data()), era_string, central_or_shift));
+  selHistManager->evt_2genuineBJets_->bookHistograms(fs);
   selHistManager->mem_1genuineBJet_ = new MEMbbwwHistManagerDilepton(makeHistManager_cfg(process_string,
     Form("%s/sel/mem_1genuineBJet", histogramDir.data()), era_string, central_or_shift));
   selHistManager->mem_1genuineBJet_->bookHistograms(fs);
+  selHistManager->evt_1genuineBJets_ = new EventHistManager_dilepton(makeHistManager_cfg(process_string,
+    Form("%s/sel/evt_1genuineBJets", histogramDir.data()), era_string, central_or_shift));
+  selHistManager->evt_1genuineBJets_->bookHistograms(fs);
   selHistManager->mem_0genuineBJets_ = new MEMbbwwHistManagerDilepton(makeHistManager_cfg(process_string,
     Form("%s/sel/mem_0genuineBJets", histogramDir.data()), era_string, central_or_shift));
   selHistManager->mem_0genuineBJets_->bookHistograms(fs);
+  selHistManager->evt_0genuineBJets_ = new EventHistManager_dilepton(makeHistManager_cfg(process_string,
+    Form("%s/sel/evt_0genuineBJets", histogramDir.data()), era_string, central_or_shift));
+  selHistManager->evt_0genuineBJets_->bookHistograms(fs);
   selHistManager->mem_missingBJet_genuineBJet_ = new MEMbbwwHistManagerDilepton(makeHistManager_cfg(process_string,
     Form("%s/sel/mem_missingBJet_genuineBJet", histogramDir.data()), era_string, central_or_shift));
   selHistManager->mem_missingBJet_genuineBJet_->bookHistograms(fs);
@@ -785,12 +798,17 @@ int main(int argc, char* argv[])
     int numGenuineBJets = 0;
     if ( !selGenBJet_lead_isFake    ) ++numGenuineBJets;
     if ( !selGenBJet_sublead_isFake ) ++numGenuineBJets;
+    double mbb = (memMeasuredBJet_lead.p4() + memMeasuredBJet_sublead.p4()).mass();
+    double mll = (memMeasuredLepton_lead.p4() + memMeasuredLepton_sublead.p4()).mass();
     if ( numGenuineBJets == 2 ) {
       selHistManager->mem_2genuineBJets_->fillHistograms(memResult, memCpuTime, evtWeight);
+      selHistManager->evt_2genuineBJets_->fillHistograms(mbb, mll, evtWeight);
     } else if ( numGenuineBJets == 1 ) {
       selHistManager->mem_1genuineBJet_->fillHistograms(memResult, memCpuTime, evtWeight);
+      selHistManager->evt_1genuineBJets_->fillHistograms(mbb, mll, evtWeight);
     } else {
       selHistManager->mem_0genuineBJets_->fillHistograms(memResult, memCpuTime, evtWeight);
+      selHistManager->evt_0genuineBJets_->fillHistograms(mbb, mll, evtWeight);
     }
     int numGenuineBJets_missingBJet = ( !selGenBJet_isFake_missingBJet ) ? 1 : 0;
     if ( numGenuineBJets_missingBJet == 1 ) {
