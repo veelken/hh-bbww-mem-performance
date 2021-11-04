@@ -646,19 +646,6 @@ TGraph* compGraphROC(const std::string& graphName, const TGraph* graphEfficiency
   return graphROC;
 }
 
-TGraph* compGraphROC(const std::string& graphName, const TH1* histogram_signal, const TH1* histogram_background, bool useLogScale)
-{
-  //std::cout << "<compGraphROC>:" << std::endl;
-  //std::cout << " graphName = " << graphName << std::endl;
-  assert(histogram_signal->GetNbinsX() == histogram_background->GetNbinsX());
-  TGraph* graphEfficiency_signal = compGraphEfficiency(Form("%s_signal", graphName.data()), histogram_signal);
-  TGraph* graphEfficiency_background = compGraphEfficiency(Form("%s_background", graphName.data()), histogram_background);
-  TGraph* graphROC = compGraphROC(graphName, graphEfficiency_signal, graphEfficiency_background, useLogScale);
-  delete graphEfficiency_signal;
-  delete graphEfficiency_background;
-  return graphROC;
-}
-
 struct S_and_B
 {  
   S_and_B(double S, double B)
@@ -676,22 +663,37 @@ bool isHigherS_over_B(const S_and_B& bin1, const S_and_B& bin2)
   return bin1.S_over_B_ > bin2.S_over_B_;
 }
 
-TGraph* compGraphROC2d(const std::string& graphName, const TH1* histogram_signal, const TH1* histogram_background, bool useLogScale)
+TGraph* compGraphROC(const std::string& graphName, const TH1* histogram_signal, const TH1* histogram_background, bool useLogScale)
 {
-  const TH2* histogram2d_signal = dynamic_cast<const TH2*>(histogram_signal);
-  const TH2* histogram2d_background = dynamic_cast<const TH2*>(histogram_background);
-  assert(histogram2d_signal && histogram2d_background);
-  assert(histogram2d_signal->GetNbinsX() == histogram2d_background->GetNbinsX());
-  assert(histogram2d_signal->GetNbinsY() == histogram2d_background->GetNbinsY());
-  int numBinsX = histogram2d_signal->GetNbinsX();
-  int numBinsY = histogram2d_signal->GetNbinsY();
+  assert(histogram_signal && histogram_background);
   std::vector<S_and_B> bins;
   double integralS = 0.;
   double integralB = 0.;
-  for ( int idxBinX = 0; idxBinX <= (numBinsX + 1); ++idxBinX ) { // CV: include underflow and overflow bins
-    for ( int idxBinY = 0; idxBinY <= (numBinsY + 1); ++idxBinY ) { // CV: include underflow and overflow bins
-      double binContent_signal = histogram2d_signal->GetBinContent(idxBinX, idxBinX);      
-      double binContent_background = histogram2d_background->GetBinContent(idxBinX, idxBinX);
+  if ( dynamic_cast<const TH2*>(histogram_signal) && dynamic_cast<const TH2*>(histogram_background) )
+  {
+    const TH2* histogram2d_signal = dynamic_cast<const TH2*>(histogram_signal);
+    const TH2* histogram2d_background = dynamic_cast<const TH2*>(histogram_background);
+    assert(histogram2d_signal->GetNbinsX() == histogram2d_background->GetNbinsX());
+    assert(histogram2d_signal->GetNbinsY() == histogram2d_background->GetNbinsY());
+    int numBinsX = histogram2d_signal->GetNbinsX();
+    int numBinsY = histogram2d_signal->GetNbinsY();
+    for ( int idxBinX = 0; idxBinX <= (numBinsX + 1); ++idxBinX ) { // CV: include underflow and overflow bins
+      for ( int idxBinY = 0; idxBinY <= (numBinsY + 1); ++idxBinY ) { // CV: include underflow and overflow bins
+        double binContent_signal = histogram2d_signal->GetBinContent(idxBinX, idxBinY);      
+        double binContent_background = histogram2d_background->GetBinContent(idxBinX, idxBinY);
+        bins.push_back(S_and_B(binContent_signal, binContent_background));
+        integralS += binContent_signal;
+        integralB += binContent_background;
+      }
+    }
+  }
+  else
+  {
+    assert(histogram_signal->GetNbinsX() == histogram_background->GetNbinsX());
+    int numBinsX = histogram_signal->GetNbinsX();
+    for ( int idxBinX = 0; idxBinX <= (numBinsX + 1); ++idxBinX ) { // CV: include underflow and overflow bins
+      double binContent_signal = histogram_signal->GetBinContent(idxBinX);      
+      double binContent_background = histogram_background->GetBinContent(idxBinX);
       bins.push_back(S_and_B(binContent_signal, binContent_background));
       integralS += binContent_signal;
       integralB += binContent_background;
@@ -1097,18 +1099,10 @@ void makeControlPlots_bbww_dilepton()
         Form("hh_bbwwMEM_dilepton_signal_vs_background_%s_unsmeared.pdf", histogramKey.data()));
 
       if ( idxHistogram == kMbb || idxHistogram == kMll || idxHistogram == kMll_vs_Mbb ) {
-        TGraph* graph_ROC_noSmearing_2genuineBJets_logScale = nullptr;
-        if ( idxHistogram == kMll_vs_Mbb ) {
-          graph_ROC_noSmearing_2genuineBJets_logScale = compGraphROC2d(
-            "graph_ROC_noSmearing_2genuineBJets",
-            histogram_noSmearing_2genuineBJets_signal, 
-            histogram_noSmearing_2genuineBJets_background, true);
-        } else {
-          graph_ROC_noSmearing_2genuineBJets_logScale = compGraphROC(
-            "graph_ROC_noSmearing_2genuineBJets",
-            histogram_noSmearing_2genuineBJets_signal, 
-            histogram_noSmearing_2genuineBJets_background, true);
-        }
+        TGraph* graph_ROC_noSmearing_2genuineBJets_logScale = compGraphROC(
+          "graph_ROC_noSmearing_2genuineBJets",
+          histogram_noSmearing_2genuineBJets_signal, 
+          histogram_noSmearing_2genuineBJets_background, true);
 
         showGraphs(
           showGraphs_canvasSizeX, showGraphs_canvasSizeY,

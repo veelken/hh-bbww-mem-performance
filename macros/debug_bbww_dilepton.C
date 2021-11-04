@@ -16,6 +16,9 @@
 #include <TROOT.h>
 #include <TStyle.h>
 
+#include "Math/LorentzVector.h"
+#include "Math/PtEtaPhiM4D.h"
+
 #include <string>
 #include <vector>
 #include <map>
@@ -26,6 +29,8 @@
 bool makePlots_png  = true;
 bool makePlots_pdf  = false;
 bool makePlots_root = false;
+
+typedef ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<double> > LorentzVector;
 
 TFile* openFile(const std::string& inputFilePath, const std::string& inputFileName)
 {
@@ -68,6 +73,8 @@ struct histogramEntryType
     histogram_drll_     = new TH1D("drll",     "drll",     50,   0.,    5.);
     histogram_dphill_   = new TH1D("dphill",   "dphill",   36,   0., TMath::Pi());
     histogram_mll_      = new TH1D("mll",      "mll",      40,   0.,  200.); 
+    histogram_mvis_     = new TH1D("mvis",     "mvis",     50,   0., 1000.); 
+    histogram_mtot_     = new TH1D("mtot",     "mtot",     50,   0., 1000.); 
   }
   ~histogramEntryType()
   {
@@ -80,6 +87,8 @@ struct histogramEntryType
     delete histogram_drll_;
     delete histogram_dphill_;
     delete histogram_mll_;
+    delete histogram_mvis_;
+    delete histogram_mtot_;    
   }
   TH1* histogram_memLR_;
   TH1* histogram_memLRerr_;
@@ -90,6 +99,8 @@ struct histogramEntryType
   TH1* histogram_drll_;
   TH1* histogram_dphill_;
   TH1* histogram_mll_;
+  TH1* histogram_mvis_;
+  TH1* histogram_mtot_;
 };
 
 TH1* getHistogram(histogramEntryType* histograms, const std::string& histogramName)
@@ -103,6 +114,8 @@ TH1* getHistogram(histogramEntryType* histograms, const std::string& histogramNa
   else if ( histogramName == "drll"     ) return histograms->histogram_drll_;
   else if ( histogramName == "dphill"   ) return histograms->histogram_dphill_;
   else if ( histogramName == "mll"      ) return histograms->histogram_mll_;
+  else if ( histogramName == "mvis"     ) return histograms->histogram_mvis_;
+  else if ( histogramName == "mtot"     ) return histograms->histogram_mtot_;
   else {
     std::cerr << "Invalid histogram name = " << histogramName << " !!" << std::endl;
     assert(0);
@@ -162,6 +175,34 @@ fillHistograms(TTree* tree, const std::string& selection)
   Float_t mll;
   tree->SetBranchAddress("mll", &mll);
 
+  Float_t bjet1Pt, bjet1Eta, bjet1Phi, bjet1Mass;
+  tree->SetBranchAddress("bjet1_pt",   &bjet1Pt);
+  tree->SetBranchAddress("bjet1_eta",  &bjet1Eta);
+  tree->SetBranchAddress("bjet1_phi",  &bjet1Phi);
+  tree->SetBranchAddress("bjet1_mass", &bjet1Mass);
+  
+  Float_t bjet2Pt, bjet2Eta, bjet2Phi, bjet2Mass;
+  tree->SetBranchAddress("bjet2_pt",   &bjet2Pt);
+  tree->SetBranchAddress("bjet2_eta",  &bjet2Eta);
+  tree->SetBranchAddress("bjet2_phi",  &bjet2Phi);
+  tree->SetBranchAddress("bjet2_mass", &bjet2Mass);
+  
+  Float_t lepton1Pt, lepton1Eta, lepton1Phi, lepton1Mass;
+  tree->SetBranchAddress("lepton1_pt",   &lepton1Pt);
+  tree->SetBranchAddress("lepton1_eta",  &lepton1Eta);
+  tree->SetBranchAddress("lepton1_phi",  &lepton1Phi);
+  tree->SetBranchAddress("lepton1_mass", &lepton1Mass);
+  
+  Float_t lepton2Pt, lepton2Eta, lepton2Phi, lepton2Mass;
+  tree->SetBranchAddress("lepton2_pt",   &lepton2Pt);
+  tree->SetBranchAddress("lepton2_eta",  &lepton2Eta);
+  tree->SetBranchAddress("lepton2_phi",  &lepton2Phi);
+  tree->SetBranchAddress("lepton2_mass", &lepton2Mass);
+
+  Float_t metPx, metPy;
+  tree->SetBranchAddress("met_px",       &metPx);
+  tree->SetBranchAddress("met_py",       &metPy);
+
   histogramEntryType* histograms = new histogramEntryType();
 
   for ( int idxEntry = 0; idxEntry < numEntries; ++idxEntry ) {
@@ -184,6 +225,19 @@ fillHistograms(TTree* tree, const std::string& selection)
     fillWithOverFlow(histograms->histogram_drll_,          drll,               evtWeight);
     fillWithOverFlow(histograms->histogram_dphill_,        TMath::Abs(dphill), evtWeight);
     fillWithOverFlow(histograms->histogram_mll_,           mll,                evtWeight);
+
+    LorentzVector bjet1P4(bjet1Pt, bjet1Eta, bjet1Phi, bjet1Mass);
+    LorentzVector bjet2P4(bjet2Pt, bjet2Eta, bjet2Phi, bjet2Mass);
+    LorentzVector lepton1P4(lepton1Pt, lepton1Eta, lepton1Phi, lepton1Mass);
+    LorentzVector lepton2P4(lepton2Pt, lepton2Eta, lepton2Phi, lepton2Mass);
+    double mvis = (bjet1P4 + bjet2P4 + lepton1P4 + lepton2P4).mass();
+    fillWithOverFlow(histograms->histogram_mvis_,           mvis,               evtWeight);
+
+    double metPt  = TMath::Sqrt(metPx*metPx + metPy*metPy);
+    double metPhi = TMath::ATan2(metPy, metPx);
+    LorentzVector metP4(metPt, 0., metPhi, 0.);
+    double mtot = (bjet1P4 + bjet2P4 + lepton1P4 + lepton2P4 + metP4).mass();
+    fillWithOverFlow(histograms->histogram_mtot_,           mtot,               evtWeight);
   }
 
   return histograms;
@@ -393,6 +447,8 @@ void debug_bbww_dilepton()
   histogramNames.push_back("drll");
   histogramNames.push_back("dphill");
   histogramNames.push_back("mll");
+  histogramNames.push_back("mvis");
+  histogramNames.push_back("mtot");
 
   std::map<std::string, std::string> xAxisTitle; // key = histogramName
   std::map<std::string, std::string> yAxisTitle; // key = histogramName
@@ -443,6 +499,16 @@ void debug_bbww_dilepton()
   yAxisTitle["mll"]      = "dN/dm_{ll} [1/GeV]";
   yMin["mll"]            = 1.1e-5;
   yMax["mll"]            = 1.9e0;
+
+  xAxisTitle["mvis"]     = "m_{vis} [GeV]";
+  yAxisTitle["mvis"]     = "dN/dm_{vis} [1/GeV]";
+  yMin["mvis"]           = 1.1e-5;
+  yMax["mvis"]           = 1.9e0;
+
+  xAxisTitle["mtot"]     = "m_{tot} [GeV]";
+  yAxisTitle["mtot"]     = "dN/dm_{tot} [1/GeV]";
+  yMin["mtot"]           = 1.1e-5;
+  yMax["mtot"]           = 1.9e0;
 
   for ( std::vector<std::string>::const_iterator histogramName = histogramNames.begin();
         histogramName != histogramNames.end(); ++histogramName ) {
