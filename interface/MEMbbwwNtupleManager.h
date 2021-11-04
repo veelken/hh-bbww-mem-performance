@@ -17,7 +17,7 @@
 class MEMbbwwNtupleManager
 {
 public:
-  MEMbbwwNtupleManager(const std::string & outputTreeName);
+  MEMbbwwNtupleManager(const std::string & outputDirectoryName, const std::string & outputTreeName);
   virtual ~MEMbbwwNtupleManager();
 
   void makeTree(TFileDirectory & dir);

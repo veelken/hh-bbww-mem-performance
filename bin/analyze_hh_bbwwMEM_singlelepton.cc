@@ -360,16 +360,17 @@ int main(int argc, char* argv[])
     Form("%s/sel/weights", histogramDir.data()), era_string, central_or_shift));
   selHistManager->weights_->bookHistograms(fs, { "genWeight", "pileupWeight" });
 
-  MEMbbwwNtupleManager_singlelepton* mem_ntuple = new MEMbbwwNtupleManager_singlelepton("mem");
+  std::string ntupleDir = Form("%s/ntuples/%s", histogramDir.data(), process_string.data());
+  MEMbbwwNtupleManager_singlelepton* mem_ntuple = new MEMbbwwNtupleManager_singlelepton(ntupleDir, "mem");
   mem_ntuple->makeTree(fs);
   mem_ntuple->initializeBranches();
-  MEMbbwwNtupleManager_singlelepton* mem_ntuple_missingBJet = new MEMbbwwNtupleManager_singlelepton("mem_missingBJet");
+  MEMbbwwNtupleManager_singlelepton* mem_ntuple_missingBJet = new MEMbbwwNtupleManager_singlelepton(ntupleDir, "mem_missingBJet");
   mem_ntuple_missingBJet->makeTree(fs);
   mem_ntuple_missingBJet->initializeBranches();
-  MEMbbwwNtupleManager_singlelepton* mem_ntuple_missingWJet = new MEMbbwwNtupleManager_singlelepton("mem_missingWJet");
+  MEMbbwwNtupleManager_singlelepton* mem_ntuple_missingWJet = new MEMbbwwNtupleManager_singlelepton(ntupleDir, "mem_missingWJet");
   mem_ntuple_missingWJet->makeTree(fs);
   mem_ntuple_missingWJet->initializeBranches();
-  MEMbbwwNtupleManager_singlelepton* mem_ntuple_missingBnWJet = new MEMbbwwNtupleManager_singlelepton("mem_missingBnWJet");
+  MEMbbwwNtupleManager_singlelepton* mem_ntuple_missingBnWJet = new MEMbbwwNtupleManager_singlelepton(ntupleDir, "mem_missingBnWJet");
   mem_ntuple_missingBnWJet->makeTree(fs);
   mem_ntuple_missingBnWJet->initializeBranches();
 

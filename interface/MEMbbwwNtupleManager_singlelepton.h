@@ -7,7 +7,7 @@
 class MEMbbwwNtupleManager_singlelepton : public MEMbbwwNtupleManager
 {
  public:
-  MEMbbwwNtupleManager_singlelepton(const std::string & outputTreeName);
+  MEMbbwwNtupleManager_singlelepton(const std::string & outputDirectoryName, const std::string & outputTreeName);
   ~MEMbbwwNtupleManager_singlelepton();
 
   void initializeBranches();

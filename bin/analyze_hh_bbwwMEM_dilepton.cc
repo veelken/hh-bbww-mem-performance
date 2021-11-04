@@ -302,10 +302,11 @@ int main(int argc, char* argv[])
     Form("%s/sel/weights", histogramDir.data()), era_string, central_or_shift));
   selHistManager->weights_->bookHistograms(fs, { "genWeight", "pileupWeight" });
 
-  MEMbbwwNtupleManager_dilepton* mem_ntuple = new MEMbbwwNtupleManager_dilepton("mem");
+  std::string ntupleDir = Form("%s/ntuples/%s", histogramDir.data(), process_string.data());
+  MEMbbwwNtupleManager_dilepton* mem_ntuple = new MEMbbwwNtupleManager_dilepton(ntupleDir, "mem");
   mem_ntuple->makeTree(fs);
   mem_ntuple->initializeBranches();
-  MEMbbwwNtupleManager_dilepton* mem_ntuple_missingBJet = new MEMbbwwNtupleManager_dilepton("mem_missingBJet");
+  MEMbbwwNtupleManager_dilepton* mem_ntuple_missingBJet = new MEMbbwwNtupleManager_dilepton(ntupleDir, "mem_missingBJet");
   mem_ntuple_missingBJet->makeTree(fs);
   mem_ntuple_missingBJet->initializeBranches();
 

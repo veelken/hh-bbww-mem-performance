@@ -8,8 +8,8 @@
 #include <algorithm> // std::sort
 #include <math.h>    // sqrt, atan2
 
-MEMbbwwNtupleManager_singlelepton::MEMbbwwNtupleManager_singlelepton(const std::string & outputTreeName)
-  : MEMbbwwNtupleManager(outputTreeName)
+MEMbbwwNtupleManager_singlelepton::MEMbbwwNtupleManager_singlelepton(const std::string & outputDirectoryName, const std::string & outputTreeName)
+  : MEMbbwwNtupleManager(outputDirectoryName, outputTreeName)
   , wjet1_("wjet1")
   , wjet2_("wjet2")
   , nwjets_(0)

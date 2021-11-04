@@ -10,8 +10,8 @@
 #include <algorithm> // std::sort
 #include <math.h>    // sqrt, atan2
 
-MEMbbwwNtupleManager_dilepton::MEMbbwwNtupleManager_dilepton(const std::string & outputTreeName)
-  : MEMbbwwNtupleManager(outputTreeName)
+MEMbbwwNtupleManager_dilepton::MEMbbwwNtupleManager_dilepton(const std::string & outputDirectoryName, const std::string & outputTreeName)
+  : MEMbbwwNtupleManager(outputDirectoryName, outputTreeName)
   , lepton1_("lepton1")
   , lepton2_("lepton2")
   , nleptons_(0)

@@ -7,7 +7,7 @@
 class MEMbbwwNtupleManager_dilepton : public MEMbbwwNtupleManager
 {
  public:
-  MEMbbwwNtupleManager_dilepton(const std::string & outputTreeName);
+  MEMbbwwNtupleManager_dilepton(const std::string & outputDirectoryName, const std::string & outputTreeName);
   ~MEMbbwwNtupleManager_dilepton();
 
   void initializeBranches();

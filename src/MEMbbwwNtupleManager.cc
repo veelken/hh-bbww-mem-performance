@@ -2,8 +2,9 @@
 
 #include "tthAnalysis/HiggsToTauTau/interface/histogramAuxFunctions.h" // createSubdirectory_recursively
 
-MEMbbwwNtupleManager::MEMbbwwNtupleManager(const std::string & outputTreeName)
-  : outputTreeName_(outputTreeName)
+MEMbbwwNtupleManager::MEMbbwwNtupleManager(const std::string & outputDirectoryName, const std::string & outputTreeName)
+  : outputDirectoryName_(outputDirectoryName)
+  , outputTreeName_(outputTreeName)
   , tree_(nullptr)
   , run_(0)
   , ls_(0)
@@ -37,7 +38,7 @@ MEMbbwwNtupleManager::~MEMbbwwNtupleManager()
 void 
 MEMbbwwNtupleManager::makeTree(TFileDirectory & dir)
 {
-  TDirectory * subDir = createSubdirectory_recursively(dir, "ntuples");
+  TDirectory * subDir = createSubdirectory_recursively(dir, outputDirectoryName_);
   subDir->cd();
   tree_ = new TTree(outputTreeName_.c_str(), outputTreeName_.c_str());
   dir.cd();
