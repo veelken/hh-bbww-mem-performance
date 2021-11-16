@@ -33,8 +33,8 @@ process.analyze_hh_bbwwMEM_dilepton = cms.PSet(
     apply_jetSmearing = cms.bool(True),
     jetSmearing_coeff = cms.double(1.00),
     apply_metSmearing = cms.bool(True),
-    metSmearing_sigmaX = cms.double(10.),
-    metSmearing_sigmaY = cms.double(10.),
+    metSmearing_sigmaX = cms.double(25.),
+    metSmearing_sigmaY = cms.double(25.),
 
     apply_genWeight = cms.bool(True),
     hasLHE = cms.bool(True),
