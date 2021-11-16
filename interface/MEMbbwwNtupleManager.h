@@ -29,6 +29,7 @@ public:
 
 protected:
 
+  std::string outputDirectoryName_;
   std::string outputTreeName_;
   TTree* tree_;
 
