@@ -144,6 +144,8 @@ int main(int argc, char* argv[])
   metCov[0][1] = 0.;
   metCov[1][1] = mem::square(metSmearing_sigmaY);
 
+  double genBJet_pFake = cfg_analyze.getParameter<double>("genBJet_pFake");
+
   // random number generator for choosing fake b-jets
   TRandom3 rnd;
   rnd.SetSeed(12345);
@@ -507,7 +509,6 @@ int main(int argc, char* argv[])
     GenMEt genMEt(genMEtPx, genMEtPy);
 
 //--- apply pT smearing to generator-level b-jets (and other jets)
-    const double genBJet_pFake = 0.10;
     std::vector<GenJet> selGenBJets_smeared;
     bool selGenBJet_lead_isFake = false;
     bool selGenBJet_sublead_isFake = false;
