@@ -1189,7 +1189,7 @@ void showGraphs_wRatio(double canvasSizeX, double canvasSizeY,
   delete canvas;
 }
 
-void makeMEMPerformancePlots_bbww_singlelepton()
+void makeMEMPerformancePlotsFromHistograms_bbww_singlelepton()
 {
   gROOT->SetBatch(true);
 

@@ -2,7 +2,10 @@
 #include <TFile.h>
 #include <TString.h>
 #include <TCanvas.h>
+#include <TTree.h>
+#include <TTreeFormula.h>
 #include <TH1.h>
+#include <TH2.h>
 #include <TGraph.h>
 #include <TAxis.h>
 #include <TLegend.h>
@@ -20,46 +23,213 @@
 #include <iomanip>
 #include <assert.h>
 
+enum { kDisabled, kEnabled }; 
+
 enum { kUndefined, kSignal_lo, kSignal_nlo, kBackground_lo, kBackground_nlo };
 
-enum { kProbSignal, kProbBackground, kLR };
+enum { kProbS, kProbB, kLR, kMbb, kMll };
+
+std::string getHistogramName(int idxHistogram)
+{
+  if      ( idxHistogram == kProbS ) return "probS";
+  else if ( idxHistogram == kProbB ) return "probB";
+  else if ( idxHistogram == kLR    ) return "memLR";
+  else if ( idxHistogram == kMbb   ) return "mbb";
+  else if ( idxHistogram == kMll   ) return "mll";
+  else assert(0);
+  return "";
+}
 
 bool makePlots_png  = true;
 bool makePlots_pdf  = true;
 bool makePlots_root = true;
 
-std::string getHistogramKey(int idxHistogram)
+//-------------------------------------------------------------------------------
+// CV: the functions getLikelihoodRatio and getLikelihoodRatioErr have been copied from
+//       hhAnalysis/bbwwMEM/interface/MEMResult.h
+double getLikelihoodRatio(double prob_signal, double prob_background)
 {
-  if      ( idxHistogram == kProbSignal     ) return "probS";
-  else if ( idxHistogram == kProbBackground ) return "probB";
-  else if ( idxHistogram == kLR             ) return "memLR";
-  else assert(0);
-  return "";
+  double prob_SplusB = prob_signal + prob_background;    
+  if ( prob_SplusB > 0. ) {
+    return prob_signal/prob_SplusB;
+  } else {
+    return 0.;
+  }
 }
 
-TH1* loadHistogram(TFile* inputFile, const std::string& directory_part1, const std::string& directory_part2, int signal_or_background, const std::string& histogramName)
-{  
-  TString histogramName_full = directory_part1.data();
-  if ( !histogramName_full.EndsWith("/") ) histogramName_full.Append("/");
-  histogramName_full.Append(directory_part2.data());
-  if ( !histogramName_full.EndsWith("/") ) histogramName_full.Append("/");
-  if      ( signal_or_background == kSignal_lo      ) histogramName_full.Append("signal_lo");
-  else if ( signal_or_background == kSignal_nlo     ) histogramName_full.Append("signal_nlo");
-  else if ( signal_or_background == kBackground_lo  ) histogramName_full.Append("background_lo");
-  else if ( signal_or_background == kBackground_nlo ) histogramName_full.Append("background_nlo");
-  else assert(0);
-  if ( !histogramName_full.EndsWith("/") ) histogramName_full.Append("/");
-  histogramName_full.Append(histogramName.data());
-  TH1* histogram = (TH1*)inputFile->Get(histogramName_full.Data());
-  if ( !histogram ) {
-    std::cerr << "Failed to load histogram = " << histogramName_full.Data() << " from file = " << inputFile->GetName() << " !!" << std::endl;
+double square(double x)
+{
+  return x*x;
+}
+  
+double getLikelihoodRatioErr(double prob_signal, double probErr_signal, double prob_background, double probErr_background)
+{
+  double prob2_SplusB = square(prob_signal + prob_background);
+  if ( prob2_SplusB > 0. ) {
+    return TMath::Sqrt(square((prob_background/prob2_SplusB)*probErr_signal) + square((prob_signal/prob2_SplusB)*probErr_background));
+  } else {
+    return 0.;
+  }
+}
+//-------------------------------------------------------------------------------
+
+//-------------------------------------------------------------------------------
+// CV: the functions openFile, loadTree, getHistogram, fillWithOverFlow, fillWithOverFlow_logx, fillHistograms
+//     and the defintion of the struct histogramEntryType have been copied from
+//       hhAnalysis/bbwwMEMPerformanceStudies/macros/debug_bbww_dilepton.C
+//
+TFile* openFile(const std::string& inputFilePath, const std::string& inputFileName)
+{
+  TString inputFileName_full = inputFilePath.data();
+  if ( !inputFileName_full.EndsWith("/") ) inputFileName_full.Append("/");
+  inputFileName_full.Append(inputFileName.data());
+  TFile* inputFile = new TFile(inputFileName_full.Data());
+  if ( !inputFile ) {
+    std::cerr << "Failed to open input file = " << inputFileName_full.Data() << " !!" << std::endl;
     assert(0);
   }
-  if ( !histogram->GetSumw2N() ) histogram->Sumw2();
-  double integral = histogram->Integral(1, histogram->GetNbinsX()); // CV: exclude underflow and overflow bins
-  if ( integral > 0. ) histogram->Scale(1./integral);
-  return histogram;
+  return inputFile;
 }
+
+TTree* loadTree(TFile* inputFile, const std::string& directory, const std::string& treeName)
+{  
+  TString treeName_full = directory.data();
+  if ( !treeName_full.EndsWith("/") ) treeName_full.Append("/");
+  treeName_full.Append(treeName.data());
+  TTree* tree = (TTree*)inputFile->Get(treeName_full.Data());
+  if ( !tree ) {
+    std::cerr << "Failed to load tree = " << treeName_full.Data() << " from file = " << inputFile->GetName() << " !!" << std::endl;
+    assert(0);
+  }
+  std::cout << "Successfully loaded tree = '" << treeName_full.Data() << "' from file = " << inputFile->GetName() << std::endl;
+  std::cout << " #entries = " << tree->GetEntries() << std::endl;
+  return tree;
+}
+
+struct histogramEntryType
+{
+  histogramEntryType()
+  {
+    histogram_memLR_    = new TH1D("memLR",    "memLR",    40,   0.,    1.);
+    histogram_memProbS_ = new TH1D("memProbS", "memProbS", 40, -70.,  +10.);
+    histogram_memProbB_ = new TH1D("memProbB", "memProbB", 40, -70.,  +10.);
+    histogram_drbb_     = new TH1D("drbb",     "drbb",     40,   0.,    4.);
+    histogram_mbb_      = new TH1D("mbb",      "mbb",      50, 100.,  150.);
+    histogram_drll_     = new TH1D("drll",     "drll",     40,   0.,    4.);
+    histogram_dphill_   = new TH1D("dphill",   "dphill",   36,   0., TMath::Pi());
+    histogram_mll_      = new TH1D("mll",      "mll",      40,   0.,  100.); 
+  }
+  ~histogramEntryType()
+  {
+    delete histogram_memLR_;
+    delete histogram_memProbS_;
+    delete histogram_memProbB_;
+    delete histogram_drbb_;
+    delete histogram_mbb_;
+    delete histogram_drll_;
+    delete histogram_dphill_;
+    delete histogram_mll_;
+  }
+  TH1* histogram_memLR_;
+  TH1* histogram_memProbS_;
+  TH1* histogram_memProbB_;
+  TH1* histogram_drbb_;
+  TH1* histogram_mbb_;
+  TH1* histogram_drll_;
+  TH1* histogram_dphill_;
+  TH1* histogram_mll_;
+};
+
+TH1* getHistogram(histogramEntryType* histograms, int idxHistogram)
+{
+  if      ( idxHistogram == kProbS ) return histograms->histogram_memProbS_;
+  else if ( idxHistogram == kProbB ) return histograms->histogram_memProbB_;
+  else if ( idxHistogram == kLR    ) return histograms->histogram_memLR_;
+  else if ( idxHistogram == kMbb   ) return histograms->histogram_mbb_;
+  else if ( idxHistogram == kMll   ) return histograms->histogram_mll_;
+  else assert(0);
+  return nullptr;
+}
+
+void fillWithOverFlow(TH1* histogram, double x, double evtWeight)
+{
+  if ( !histogram ) return;
+  const TAxis* const xAxis = histogram->GetXaxis();
+  int idxBin = xAxis->FindBin(x);
+  if ( idxBin < 1                 ) idxBin = 1;
+  if ( idxBin > xAxis->GetNbins() ) idxBin = xAxis->GetNbins();
+  double binCenter = histogram->GetBinCenter(idxBin);
+  histogram->Fill(binCenter, evtWeight);
+}
+
+void fillWithOverFlow_logx(TH1* histogram, double x, double evtWeight)
+{    
+  const double nonzero = 1.e-30;
+  fillWithOverFlow(histogram, TMath::Log(TMath::Max(nonzero, x)), evtWeight);
+}
+
+void fillHistograms(histogramEntryType* histograms, TTree* tree, const std::string& selection, double sf_memProbS, double sf_memProbB)
+{
+  int numEntries = tree->GetEntries();
+
+  TTreeFormula* treeFormula = nullptr;
+  if ( selection != "" ) {
+    treeFormula = new TTreeFormula("treeFormula", selection.data(), tree);
+
+    int numEntries_selected = 0;
+    for ( int idxEntry = 0; idxEntry < numEntries; ++idxEntry ) {
+      tree->GetEntry(idxEntry);
+      if ( !treeFormula->EvalInstance() ) continue;
+      ++numEntries_selected;
+    }
+
+    std::cout << "Applying selection= '" << selection << "'" << std::endl;
+    std::cout << " " << numEntries_selected << " out of " << numEntries << " entries selected." << std::endl;
+  }
+
+  //Double_t memLR, memLRerr;
+  //tree->SetBranchAddress("memLR", &memLR);
+  //tree->SetBranchAddress("memLRerr", &memLRerr);
+
+  Double_t memProbS, memProbSerr;
+  tree->SetBranchAddress("memProbS", &memProbS);
+  tree->SetBranchAddress("memProbSerr", &memProbSerr);
+
+  Double_t memProbB, memProbBerr;
+  tree->SetBranchAddress("memProbB", &memProbB);
+  tree->SetBranchAddress("memProbBerr", &memProbBerr);
+
+  Float_t drbb, mbb;
+  tree->SetBranchAddress("drbb", &drbb);
+  tree->SetBranchAddress("mbb", &mbb);
+
+  Float_t drll, dphill, mll;
+  tree->SetBranchAddress("drll", &drll);
+  tree->SetBranchAddress("dphill", &dphill);
+  tree->SetBranchAddress("mll", &mll);
+
+  for ( int idxEntry = 0; idxEntry < numEntries; ++idxEntry ) {
+    tree->GetEntry(idxEntry);
+    if ( treeFormula && !treeFormula->EvalInstance() ) continue;
+    
+    const double evtWeight = 1.;
+
+    double memLR = getLikelihoodRatio(sf_memProbS*memProbS, sf_memProbB*memProbB);
+    double memLRerr = getLikelihoodRatioErr(sf_memProbS*memProbS, sf_memProbS*memProbSerr, sf_memProbB*memProbB, sf_memProbB*memProbBerr);
+
+    fillWithOverFlow(histograms->histogram_memLR_,         memLR,              evtWeight);
+    fillWithOverFlow_logx(histograms->histogram_memProbS_, memProbS,           evtWeight);
+    fillWithOverFlow_logx(histograms->histogram_memProbB_, memProbB,           evtWeight);
+    fillWithOverFlow(histograms->histogram_drbb_,          drbb,               evtWeight);
+    fillWithOverFlow(histograms->histogram_mbb_,           mbb,                evtWeight);
+    fillWithOverFlow(histograms->histogram_drll_,          drll,               evtWeight);
+    fillWithOverFlow(histograms->histogram_dphill_,        TMath::Abs(dphill), evtWeight);
+    fillWithOverFlow(histograms->histogram_mll_,           mll,                evtWeight);
+  }
+
+  delete treeFormula;
+}
+//-------------------------------------------------------------------------------
 
 TH1* addHistograms(const std::string& histogramSumName, const TH1* histogram1, const TH1* histogram2, const TH1* histogram3 = nullptr)
 {
@@ -74,16 +244,6 @@ TH1* addHistograms(const std::string& histogramSumName, const TH1* histogram1, c
   return histogramSum;
 }
 
-TH1* rebinHistogram(const TH1* histogram, int numBinsX)
-{
-  TH1* histogram_rebinned = (TH1*)histogram->Clone(Form("%s_rebinned", histogram->GetName()));
-  if ( !histogram_rebinned->GetSumw2N() ) histogram_rebinned->Sumw2();
-  if ( numBinsX < histogram->GetNbinsX() && (histogram->GetNbinsX() % numBinsX) == 0 ) {
-    histogram_rebinned->Rebin(histogram->GetNbinsX() / numBinsX);
-  }
-  return histogram_rebinned;
-}
-
 void showHistograms(double canvasSizeX, double canvasSizeY,
 		    TH1* histogram1, const std::string& legendEntry1,
 		    TH1* histogram2, const std::string& legendEntry2,
@@ -93,7 +253,7 @@ void showHistograms(double canvasSizeX, double canvasSizeY,
 		    double legendTextSize, double legendPosX, double legendPosY, double legendSizeX, double legendSizeY, const std::vector<std::string>& legendOptions, 
 		    const std::string& labelText, double labelTextSize,
 		    double labelPosX, double labelPosY, double labelSizeX, double labelSizeY,
-		    int numBinsX, double xMin, double xMax, const std::string& xAxisTitle, double xAxisOffset,
+		    const std::string& xAxisTitle, double xAxisOffset,
 		    bool useLogScale, double yMin, double yMax, const std::string& yAxisTitle, double yAxisOffset,
 		    const std::string& outputFileName)
 {
@@ -113,81 +273,61 @@ void showHistograms(double canvasSizeX, double canvasSizeY,
   canvas->SetLogy(useLogScale);
   canvas->Draw();
   canvas->cd();
-
-  assert(histogram1);
-  double numBinsX_forRebinning;
-  if ( xMax > xMin ) {
-    const TAxis* xAxis = histogram1->GetXaxis();
-    assert(xAxis->GetXmax() > xAxis->GetXmin());
-    numBinsX_forRebinning = TMath::Nint(numBinsX*(xAxis->GetXmax() - xAxis->GetXmin())/(xMax - xMin));
-    //std::cout << "numBinsX = " << numBinsX << ": numBinsX_forRebinning = " << numBinsX_forRebinning << std::endl;
-  } else {
-    numBinsX_forRebinning = numBinsX;
-  }
   
   assert(histogram1);
-  TH1* histogram1_rebinned = rebinHistogram(histogram1, numBinsX_forRebinning);
-  histogram1_rebinned->SetFillColor(0);
-  histogram1_rebinned->SetFillStyle(0);
-  histogram1_rebinned->SetLineColor(colors[0]);
-  histogram1_rebinned->SetLineStyle(lineStyles[0]);
-  histogram1_rebinned->SetLineWidth(lineWidths[0]);
-  histogram1_rebinned->SetMarkerColor(colors[0]);
-  histogram1_rebinned->SetMarkerStyle(markerStyles[0]);
-  histogram1_rebinned->SetMarkerSize(markerSizes[0]);
+  histogram1->SetFillColor(0);
+  histogram1->SetFillStyle(0);
+  histogram1->SetLineColor(colors[0]);
+  histogram1->SetLineStyle(lineStyles[0]);
+  histogram1->SetLineWidth(lineWidths[0]);
+  histogram1->SetMarkerColor(colors[0]);
+  histogram1->SetMarkerStyle(markerStyles[0]);
+  histogram1->SetMarkerSize(markerSizes[0]);
 
   assert(histogram2);
-  TH1* histogram2_rebinned = rebinHistogram(histogram2, numBinsX_forRebinning);
-  histogram2_rebinned->SetFillColor(0);
-  histogram2_rebinned->SetFillStyle(0);
-  histogram2_rebinned->SetLineColor(colors[1]);
-  histogram2_rebinned->SetLineStyle(lineStyles[1]);
-  histogram2_rebinned->SetLineWidth(lineWidths[1]);
-  histogram2_rebinned->SetMarkerColor(colors[1]);
-  histogram2_rebinned->SetMarkerStyle(markerStyles[1]);
-  histogram2_rebinned->SetMarkerSize(markerSizes[1]);
+  histogram2->SetFillColor(0);
+  histogram2->SetFillStyle(0);
+  histogram2->SetLineColor(colors[1]);
+  histogram2->SetLineStyle(lineStyles[1]);
+  histogram2->SetLineWidth(lineWidths[1]);
+  histogram2->SetMarkerColor(colors[1]);
+  histogram2->SetMarkerStyle(markerStyles[1]);
+  histogram2->SetMarkerSize(markerSizes[1]);
 
-  TH1* histogram3_rebinned = nullptr;     
   if ( histogram3 ) {
-    histogram3_rebinned = rebinHistogram(histogram3, numBinsX_forRebinning);
-    histogram3_rebinned->SetFillColor(0);
-    histogram3_rebinned->SetFillStyle(0);
-    histogram3_rebinned->SetLineColor(colors[2]);
-    histogram3_rebinned->SetLineStyle(lineStyles[2]);
-    histogram3_rebinned->SetLineWidth(lineWidths[2]);
-    histogram3_rebinned->SetMarkerColor(colors[2]);
-    histogram3_rebinned->SetMarkerStyle(markerStyles[2]);
-    histogram3_rebinned->SetMarkerSize(markerSizes[2]);
+    histogram3->SetFillColor(0);
+    histogram3->SetFillStyle(0);
+    histogram3->SetLineColor(colors[2]);
+    histogram3->SetLineStyle(lineStyles[2]);
+    histogram3->SetLineWidth(lineWidths[2]);
+    histogram3->SetMarkerColor(colors[2]);
+    histogram3->SetMarkerStyle(markerStyles[2]);
+    histogram3->SetMarkerSize(markerSizes[2]);
   }
 
-  TH1* histogram4_rebinned = nullptr; 
   if ( histogram4 ) {
-    histogram4_rebinned = rebinHistogram(histogram4, numBinsX_forRebinning);
-    histogram4_rebinned->SetFillColor(0);
-    histogram4_rebinned->SetFillStyle(0);
-    histogram4_rebinned->SetLineColor(colors[3]);
-    histogram4_rebinned->SetLineStyle(lineStyles[3]);
-    histogram4_rebinned->SetLineWidth(lineWidths[3]);
-    histogram4_rebinned->SetMarkerColor(colors[3]);
-    histogram4_rebinned->SetMarkerStyle(markerStyles[3]);
-    histogram4_rebinned->SetMarkerSize(markerSizes[3]);
+    histogram4->SetFillColor(0);
+    histogram4->SetFillStyle(0);
+    histogram4->SetLineColor(colors[3]);
+    histogram4->SetLineStyle(lineStyles[3]);
+    histogram4->SetLineWidth(lineWidths[3]);
+    histogram4->SetMarkerColor(colors[3]);
+    histogram4->SetMarkerStyle(markerStyles[3]);
+    histogram4->SetMarkerSize(markerSizes[3]);
   }
   
-  TAxis* xAxis = histogram1_rebinned->GetXaxis();
+  TAxis* xAxis = histogram1->GetXaxis();
   xAxis->SetTitle(xAxisTitle.data());
   xAxis->SetTitleOffset(xAxisOffset);
   xAxis->SetTitleSize(60);
   xAxis->SetTitleFont(43);
   //xAxis->SetLabelOffset(-0.01);
   xAxis->SetLabelSize(0.050);
-  if ( xMax > xMin ) {
-    xAxis->SetRangeUser(xMin, xMax);
-  }
   xAxis->SetLabelFont(42);
   xAxis->SetTickLength(0.040);
   xAxis->SetNdivisions(505);
 
-  TAxis* yAxis = histogram1_rebinned->GetYaxis();
+  TAxis* yAxis = histogram1->GetYaxis();
   yAxis->SetTitle(yAxisTitle.data());
   yAxis->SetTitleOffset(yAxisOffset);
   yAxis->SetTitleSize(60);
@@ -201,14 +341,14 @@ void showHistograms(double canvasSizeX, double canvasSizeY,
   yAxis->SetTickLength(0.040);  
   yAxis->SetNdivisions(505);
 
-  histogram1_rebinned->SetTitle("");
-  histogram1_rebinned->SetStats(false);
+  histogram1->SetTitle("");
+  histogram1->SetStats(false);
 
-  histogram1_rebinned->Draw(Form("%ssame", drawOptions[0].data()));
-  histogram2_rebinned->Draw(Form("%ssame", drawOptions[1].data()));
-  if ( histogram3_rebinned ) histogram3_rebinned->Draw(Form("%ssame", drawOptions[2].data()));
-  if ( histogram4_rebinned ) histogram4_rebinned->Draw(Form("%ssame", drawOptions[3].data()));
-  histogram1_rebinned->Draw("axissame");
+  histogram1->Draw(Form("%ssame", drawOptions[0].data()));
+  histogram2->Draw(Form("%ssame", drawOptions[1].data()));
+  if ( histogram3 ) histogram3->Draw(Form("%ssame", drawOptions[2].data()));
+  if ( histogram4 ) histogram4->Draw(Form("%ssame", drawOptions[3].data()));
+  histogram1->Draw("axissame");
 
   TPaveText* label = nullptr;
   if ( labelText != "" ) {
@@ -233,10 +373,10 @@ void showHistograms(double canvasSizeX, double canvasSizeY,
     legend->SetTextSize(legendTextSize);
     legend->SetTextColor(1);
     legend->SetMargin(0.20);
-    legend->AddEntry(histogram1_rebinned, legendEntry1.data(), legendOptions[0].data());
-    legend->AddEntry(histogram2_rebinned, legendEntry2.data(), legendOptions[1].data());
-    if ( histogram3 ) legend->AddEntry(histogram3_rebinned, legendEntry3.data(), legendOptions[2].data());
-    if ( histogram4 ) legend->AddEntry(histogram4_rebinned, legendEntry4.data(), legendOptions[3].data());
+    legend->AddEntry(histogram1, legendEntry1.data(), legendOptions[0].data());
+    legend->AddEntry(histogram2, legendEntry2.data(), legendOptions[1].data());
+    if ( histogram3 ) legend->AddEntry(histogram3, legendEntry3.data(), legendOptions[2].data());
+    if ( histogram4 ) legend->AddEntry(histogram4, legendEntry4.data(), legendOptions[3].data());
     legend->Draw();
   }
 
@@ -252,16 +392,7 @@ void showHistograms(double canvasSizeX, double canvasSizeY,
 
   delete label;
   delete legend;
-  delete histogram1_rebinned;
-  delete histogram2_rebinned;
-  delete histogram3_rebinned;
-  delete histogram4_rebinned;
   delete canvas;
-}
-
-double square(double x)
-{
-  return x*x;
 }
 
 TH1* compRatioHistogram(const TH1* histogram_numerator, const TH1* histogram_denominator)
@@ -318,7 +449,7 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
 			   double legendTextSize, double legendPosX, double legendPosY, double legendSizeX, double legendSizeY, const std::vector<std::string>& legendOptions, 
 			   const std::string& labelText, double labelTextSize,
 			   double labelPosX, double labelPosY, double labelSizeX, double labelSizeY,
-			   int numBinsX, double xMin, double xMax, const std::string& xAxisTitle, double xAxisOffset,
+			   const std::string& xAxisTitle, double xAxisOffset,
 			   bool useLogScale, double yMin, double yMax, double yMin_ratio, double yMax_ratio, const std::string& yAxisTitle, double yAxisOffset,
 			   const std::string& outputFileName)
 {
@@ -359,67 +490,50 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
   topPad->SetLogy(useLogScale);
   topPad->Draw();
   topPad->cd();
-
-  assert(histogramRef);
-  double numBinsX_forRebinning;
-  if ( xMax > xMin ) {
-    const TAxis* xAxis = histogramRef->GetXaxis();
-    assert(xAxis->GetXmax() > xAxis->GetXmin());
-    numBinsX_forRebinning = TMath::Nint(numBinsX*(xAxis->GetXmax() - xAxis->GetXmin())/(xMax - xMin));
-    //std::cout << "numBinsX = " << numBinsX << ": numBinsX_forRebinning = " << numBinsX_forRebinning << std::endl;
-  } else {
-    numBinsX_forRebinning = numBinsX;
-  }
   
   assert(histogramRef);
-  TH1* histogramRef_rebinned = rebinHistogram(histogramRef, numBinsX_forRebinning);
-  histogramRef_rebinned->SetFillColor(0);
-  histogramRef_rebinned->SetFillStyle(0);
-  histogramRef_rebinned->SetLineColor(colors[0]);
-  histogramRef_rebinned->SetLineStyle(lineStyles[0]);
-  histogramRef_rebinned->SetLineWidth(lineWidths[0]);
-  histogramRef_rebinned->SetMarkerColor(colors[0]);
-  histogramRef_rebinned->SetMarkerStyle(markerStyles[0]);
-  histogramRef_rebinned->SetMarkerSize(markerSizes[0]);
+  histogramRef->SetFillColor(0);
+  histogramRef->SetFillStyle(0);
+  histogramRef->SetLineColor(colors[0]);
+  histogramRef->SetLineStyle(lineStyles[0]);
+  histogramRef->SetLineWidth(lineWidths[0]);
+  histogramRef->SetMarkerColor(colors[0]);
+  histogramRef->SetMarkerStyle(markerStyles[0]);
+  histogramRef->SetMarkerSize(markerSizes[0]);
 
   assert(histogram2);
-  TH1* histogram2_rebinned = rebinHistogram(histogram2, numBinsX_forRebinning);
-  histogram2_rebinned->SetFillColor(0);
-  histogram2_rebinned->SetFillStyle(0);
-  histogram2_rebinned->SetLineColor(colors[1]);
-  histogram2_rebinned->SetLineStyle(lineStyles[1]);
-  histogram2_rebinned->SetLineWidth(lineWidths[1]);
-  histogram2_rebinned->SetMarkerColor(colors[1]);
-  histogram2_rebinned->SetMarkerStyle(markerStyles[1]);
-  histogram2_rebinned->SetMarkerSize(markerSizes[1]);
+  histogram2->SetFillColor(0);
+  histogram2->SetFillStyle(0);
+  histogram2->SetLineColor(colors[1]);
+  histogram2->SetLineStyle(lineStyles[1]);
+  histogram2->SetLineWidth(lineWidths[1]);
+  histogram2->SetMarkerColor(colors[1]);
+  histogram2->SetMarkerStyle(markerStyles[1]);
+  histogram2->SetMarkerSize(markerSizes[1]);
 
-  TH1* histogram3_rebinned = nullptr;     
   if ( histogram3 ) {
-    histogram3_rebinned = rebinHistogram(histogram3, numBinsX_forRebinning);
-    histogram3_rebinned->SetFillColor(0);
-    histogram3_rebinned->SetFillStyle(0);
-    histogram3_rebinned->SetLineColor(colors[2]);
-    histogram3_rebinned->SetLineStyle(lineStyles[2]);
-    histogram3_rebinned->SetLineWidth(lineWidths[2]);
-    histogram3_rebinned->SetMarkerColor(colors[2]);
-    histogram3_rebinned->SetMarkerStyle(markerStyles[2]);
-    histogram3_rebinned->SetMarkerSize(markerSizes[2]);
+    histogram3->SetFillColor(0);
+    histogram3->SetFillStyle(0);
+    histogram3->SetLineColor(colors[2]);
+    histogram3->SetLineStyle(lineStyles[2]);
+    histogram3->SetLineWidth(lineWidths[2]);
+    histogram3->SetMarkerColor(colors[2]);
+    histogram3->SetMarkerStyle(markerStyles[2]);
+    histogram3->SetMarkerSize(markerSizes[2]);
   }
 
-  TH1* histogram4_rebinned = nullptr; 
   if ( histogram4 ) {
-    histogram4_rebinned = rebinHistogram(histogram4, numBinsX_forRebinning);
-    histogram4_rebinned->SetFillColor(0);
-    histogram4_rebinned->SetFillStyle(0);
-    histogram4_rebinned->SetLineColor(colors[3]);
-    histogram4_rebinned->SetLineStyle(lineStyles[3]);
-    histogram4_rebinned->SetLineWidth(lineWidths[3]);
-    histogram4_rebinned->SetMarkerColor(colors[3]);
-    histogram4_rebinned->SetMarkerStyle(markerStyles[3]);
-    histogram4_rebinned->SetMarkerSize(markerSizes[3]);
+    histogram4->SetFillColor(0);
+    histogram4->SetFillStyle(0);
+    histogram4->SetLineColor(colors[3]);
+    histogram4->SetLineStyle(lineStyles[3]);
+    histogram4->SetLineWidth(lineWidths[3]);
+    histogram4->SetMarkerColor(colors[3]);
+    histogram4->SetMarkerStyle(markerStyles[3]);
+    histogram4->SetMarkerSize(markerSizes[3]);
   }
   
-  TAxis* xAxis_top = histogramRef_rebinned->GetXaxis();
+  TAxis* xAxis_top = histogramRef->GetXaxis();
   xAxis_top->SetTitle(xAxisTitle.data());
   xAxis_top->SetTitleOffset(xAxisOffset);
   xAxis_top->SetTitle(xAxisTitle.data());
@@ -428,16 +542,13 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
   xAxis_top->SetTitleFont(43);
   //xAxis_top->SetLabelOffset(-0.01);
   xAxis_top->SetLabelSize(0.050);
-  if ( xMax > xMin ) {
-    xAxis_top->SetRangeUser(xMin, xMax);
-  }
   xAxis_top->SetLabelFont(42);
   xAxis_top->SetTickLength(0.040);
   xAxis_top->SetNdivisions(505);
   xAxis_top->SetLabelColor(10);
   xAxis_top->SetTitleColor(10);
 
-  TAxis* yAxis_top = histogramRef_rebinned->GetYaxis();
+  TAxis* yAxis_top = histogramRef->GetYaxis();
   yAxis_top->SetTitle(yAxisTitle.data());
   yAxis_top->SetTitleOffset(yAxisOffset);
   yAxis_top->SetTitleSize(65);
@@ -451,14 +562,14 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
   yAxis_top->SetTickLength(0.040);  
   yAxis_top->SetNdivisions(505);
 
-  histogramRef_rebinned->SetTitle("");
-  histogramRef_rebinned->SetStats(false);
+  histogramRef->SetTitle("");
+  histogramRef->SetStats(false);
 
-  histogramRef_rebinned->Draw(drawOptions[0].data());
-  histogram2_rebinned->Draw(Form("%ssame", drawOptions[1].data()));
-  if ( histogram3_rebinned ) histogram3_rebinned->Draw(Form("%ssame", drawOptions[2].data()));
-  if ( histogram4_rebinned ) histogram4_rebinned->Draw(Form("%ssame", drawOptions[3].data()));
-  histogramRef_rebinned->Draw("axissame");
+  histogramRef->Draw(drawOptions[0].data());
+  histogram2->Draw(Form("%ssame", drawOptions[1].data()));
+  if ( histogram3 ) histogram3->Draw(Form("%ssame", drawOptions[2].data()));
+  if ( histogram4 ) histogram4->Draw(Form("%ssame", drawOptions[3].data()));
+  histogramRef->Draw("axissame");
 
   TPaveText* label = nullptr;
   if ( labelText != "" ) {
@@ -483,10 +594,10 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
     legend->SetTextSize(legendTextSize);
     legend->SetTextColor(1);
     legend->SetMargin(0.20);
-    legend->AddEntry(histogramRef_rebinned, legendEntryRef.data(), legendOptions[0].data());
-    legend->AddEntry(histogram2_rebinned, legendEntry2.data(), legendOptions[1].data());
-    if ( histogram3 ) legend->AddEntry(histogram3_rebinned, legendEntry3.data(), legendOptions[2].data());
-    if ( histogram4 ) legend->AddEntry(histogram4_rebinned, legendEntry4.data(), legendOptions[3].data());
+    legend->AddEntry(histogramRef, legendEntryRef.data(), legendOptions[0].data());
+    legend->AddEntry(histogram2, legendEntry2.data(), legendOptions[1].data());
+    if ( histogram3 ) legend->AddEntry(histogram3, legendEntry3.data(), legendOptions[2].data());
+    if ( histogram4 ) legend->AddEntry(histogram4, legendEntry4.data(), legendOptions[3].data());
     legend->Draw();
   }
 
@@ -510,36 +621,33 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
   bottomPad->Draw();
   bottomPad->cd();
 
-  TH1* histogramRatio2_rebinned = compRatioHistogram(histogram2_rebinned, histogramRef_rebinned);
-  copyHistogramStyle(histogram2_rebinned, histogramRatio2_rebinned);
+  TH1* histogramRatio2 = compRatioHistogram(histogram2, histogramRef);
+  copyHistogramStyle(histogram2, histogramRatio2);
 
-  TH1* histogramRatio3_rebinned = nullptr;
-  if ( histogram3_rebinned ) {
-    histogramRatio3_rebinned = compRatioHistogram(histogram3_rebinned, histogramRef_rebinned);
-    copyHistogramStyle(histogram3_rebinned, histogramRatio3_rebinned);
+  TH1* histogramRatio3 = nullptr;
+  if ( histogram3 ) {
+    histogramRatio3 = compRatioHistogram(histogram3, histogramRef);
+    copyHistogramStyle(histogram3, histogramRatio3);
   }
 
-  TH1* histogramRatio4_rebinned = nullptr;
-  if ( histogram4_rebinned ) {
-    histogramRatio4_rebinned = compRatioHistogram(histogram4_rebinned, histogramRef_rebinned);
-    copyHistogramStyle(histogram4_rebinned, histogramRatio4_rebinned);
+  TH1* histogramRatio4 = nullptr;
+  if ( histogram4 ) {
+    histogramRatio4 = compRatioHistogram(histogram4, histogramRef);
+    copyHistogramStyle(histogram4, histogramRatio4);
   }
 
-  TAxis* xAxis_bottom = histogramRatio2_rebinned->GetXaxis();
+  TAxis* xAxis_bottom = histogramRatio2->GetXaxis();
   xAxis_bottom->SetTitle(xAxisTitle.data());
   xAxis_bottom->SetTitleOffset(xAxisOffset);
   xAxis_bottom->SetTitleSize(65);
   xAxis_bottom->SetTitleFont(43);
   //xAxis_bottom->SetLabelOffset(-0.01);
   xAxis_bottom->SetLabelSize(0.132);
-  if ( xMax > xMin ) {
-    xAxis_bottom->SetRangeUser(xMin, xMax);
-  }
   xAxis_bottom->SetLabelFont(42);
   xAxis_bottom->SetTickLength(0.105);
   xAxis_bottom->SetNdivisions(505);
 
-  TAxis* yAxis_bottom = histogramRatio2_rebinned->GetYaxis();
+  TAxis* yAxis_bottom = histogramRatio2->GetYaxis();
   yAxis_bottom->SetTitle("Ratio");
   yAxis_bottom->SetTitleOffset(yAxisOffset);
   yAxis_bottom->SetTitleSize(65);
@@ -550,10 +658,10 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
   yAxis_bottom->SetTickLength(0.060);
   yAxis_bottom->SetNdivisions(505);
 
-  histogramRatio2_rebinned->SetMinimum(yMin_ratio);
-  histogramRatio2_rebinned->SetMaximum(yMax_ratio);
+  histogramRatio2->SetMinimum(yMin_ratio);
+  histogramRatio2->SetMaximum(yMax_ratio);
 
-  histogramRatio2_rebinned->Draw(drawOptions[1].data());
+  histogramRatio2->Draw(drawOptions[1].data());
   
   TGraph* graph_line = new TGraph(2);
   graph_line->SetPoint(0, xAxis_bottom->GetXmin(), 1.);
@@ -563,11 +671,11 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
   graph_line->SetLineWidth(lineWidths[0]);
   graph_line->Draw("L");
 
-  histogramRatio2_rebinned->Draw("same");
+  histogramRatio2->Draw("same");
 
-  if ( histogramRatio3_rebinned ) histogramRatio3_rebinned->Draw(Form("%ssame", drawOptions[2].data()));
-  if ( histogramRatio4_rebinned ) histogramRatio4_rebinned->Draw(Form("%ssame", drawOptions[3].data()));
-  histogramRatio2_rebinned->Draw("axissame");
+  if ( histogramRatio3 ) histogramRatio3->Draw(Form("%ssame", drawOptions[2].data()));
+  if ( histogramRatio4 ) histogramRatio4->Draw(Form("%ssame", drawOptions[3].data()));
+  histogramRatio2->Draw("axissame");
 
   canvas->Update();
 
@@ -581,13 +689,9 @@ void showHistograms_wRatio(double canvasSizeX, double canvasSizeY,
 
   delete label;
   delete legend;
-  delete histogramRef_rebinned;
-  delete histogram2_rebinned;
-  delete histogramRatio2_rebinned;
-  delete histogram3_rebinned;
-  delete histogramRatio3_rebinned;
-  delete histogram4_rebinned;
-  delete histogramRatio4_rebinned;
+  delete histogramRatio2;
+  delete histogramRatio3;
+  delete histogramRatio4;
   delete graph_line;
   delete topPad;
   delete bottomPad;
@@ -1188,7 +1292,7 @@ void showGraphs_wRatio(double canvasSizeX, double canvasSizeY,
   delete canvas;
 }
 
-void makeMEMPerformancePlots_bbww_dilepton()
+void makeMEMPerformancePlotsFromNtuples_bbww_dilepton()
 {
   gROOT->SetBatch(true);
 
@@ -1200,35 +1304,85 @@ void makeMEMPerformancePlots_bbww_dilepton()
   bool makePlots_effectOfHigherOrders = true;
 
   std::string inputFilePath = "/hdfs/local/veelken/hhAnalysis/2016/2021Aug31v2/histograms/hh_bbwwMEM_dilepton/";
-  std::string inputFileName = "histograms_harvested_stage2_hh_bbwwMEM_dilepton.root";
-  TString inputFileName_full = inputFilePath.data();
-  if ( !inputFileName_full.EndsWith("/") ) inputFileName_full.Append("/");
-  inputFileName_full.Append(inputFileName.data());
-  TFile* inputFile = new TFile(inputFileName_full.Data());
-  if ( !inputFile ) {
-    std::cerr << "Failed to open input file = " << inputFileName_full.Data() << " !!" << std::endl;
-    assert(0);
+  
+  std::string directory = "ntuples";
+  std::string treeName  = "mem";
+  std::string treeName_missingBJet  = "mem_missingBJet";
+
+  std::map<int, std::vector<std::string>> processes; // key = idxProcess
+  processes[kSignal_lo].push_back("signal_ggf_nonresonant_node_sm_hh_2b2v");
+  processes[kSignal_nlo].push_back("signal_ggf_nonresonant_cHHH1_hh_2b2v");
+  processes[kBackground_lo].push_back("TTJets_DiLept");
+  processes[kBackground_lo].push_back("TTJets_DiLept_ext1");
+  processes[kBackground_nlo].push_back("TTTo2L2Nu");
+
+  typedef std::map<int, TH1*>          histogramMap1;
+  typedef std::map<int, histogramMap1> histogramMap2;
+  typedef std::map<int, histogramMap2> histogramMap3;
+  typedef std::map<int, histogramMap3> histogramMap4;
+  typedef std::map<int, histogramMap4> histogramMap5;
+  histogramMap5 histograms;             // keys = apply_jetSmearing, apply_metSmearing, numGenBJets, idxProcess, idxHistogram
+  histogramMap5 histograms_missingBJet; // keys = apply_jetSmearing, apply_metSmearing, numGenBJets, idxProcess, idxHistogram
+
+  for ( int apply_jetSmearing = kDisabled; apply_jetSmearing <= kEnabled; ++apply_jetSmearing ) {
+    for ( int apply_metSmearing = kDisabled; apply_metSmearing <= kEnabled; ++apply_metSmearing ) {
+      for ( int numGenBJets = 0; numGenBJets <= 2; ++numGenBJets ) {
+        for ( int idxProcess = kSignal_lo; idxProcess <= kBackground_nlo; ++idxProcess ) {
+
+          histogramEntryType* tmpHistograms = new histogramEntryType();
+
+          histogramEntryType* tmpHistograms_missingBJet = new histogramEntryType();
+
+          for ( std::vector<std::string>::const_iterator process = processes[idxProcess].begin();
+                process != processes[idxProcess].end(); ++process ) {
+            std::string inputFileName = "histograms_harvested_stage1_hh_bbwwMEM_dilepton";
+            inputFileName += "_";
+            inputFileName += *process;
+            inputFileName += "_";
+            if ( apply_jetSmearing == kEnabled ) inputFileName += "jetSmearingEnabled";
+            else inputFileName += "jetSmearingDisabled";
+            inputFileName += "_";
+            if ( apply_metSmearing == kEnabled ) inputFileName += "metSmearingEnabled";
+            else inputFileName += "metSmearingDisabled";
+            inputFileName += ".root";
+
+            TFile* inputFile = openFile(inputFilePath, inputFileName);
+
+            TTree* tree = loadTree(inputFile, directory, treeName);
+
+            std::string selection;
+            if      ( numGenBJets == 2 ) selection = "nbjets == 2 && gen_nbjets == 2";
+            else if ( numGenBJets == 1 ) selection = "nbjets == 2 && gen_nbjets == 1";
+            else if ( numGenBJets == 0 ) selection = "nbjets == 2 && gen_nbjets == 0";
+            if ( selection != "" ) {
+              double sf_memProbS = 1.e+4;
+              double sf_memProbB = 1.;
+              fillHistograms(tmpHistograms, tree, selection, sf_memProbS, sf_memProbB);
+            }
+
+            TTree* tree_missingBJet = loadTree(inputFile, directory, treeName_missingBJet);
+
+            std::string selection_missingBJet;
+            if      ( numGenBJets == 1 ) selection_missingBJet = "nbjets == 1 && gen_nbjets == 1";
+            else if ( numGenBJets == 0 ) selection_missingBJet = "nbjets == 1 && gen_nbjets == 0";
+            if ( selection_missingBJet != "" ) {
+              double sf_memProbS = 1.;
+              double sf_memProbB = 1.;
+              fillHistograms(tmpHistograms_missingBJet, tree_missingBJet, selection_missingBJet, sf_memProbS, sf_memProbB);
+            }
+
+            delete inputFile;
+          }
+
+          for ( int idxHistogram = kProbS; idxHistogram <= kMll; ++idxHistogram ) {
+            histograms[apply_jetSmearing][apply_metSmearing][numGenBJets][idxProcess][idxHistogram] = getHistogram(tmpHistograms, idxHistogram);
+
+            histograms_missingBJet[apply_jetSmearing][apply_metSmearing][numGenBJets][idxProcess][idxHistogram] = getHistogram(tmpHistograms_missingBJet, idxHistogram);
+          }
+        }
+      }
+    }
   }
-
-  std::map<bool, std::map<bool, std::string>> directories_part1; // key = apply_jetSmearing, apply_metSmearing
-  directories_part1[false][false]      = "hh_bbwwMEM_dilepton_jetSmearingDisabled_metSmearingDisabled";
-  directories_part1[false][true]       = "hh_bbwwMEM_dilepton_jetSmearingDisabled_metSmearingEnabled";
-  directories_part1[true][false]       = "hh_bbwwMEM_dilepton_jetSmearingEnabled_metSmearingDisabled";
-  directories_part1[true][true]        = "hh_bbwwMEM_dilepton_jetSmearingEnabled_metSmearingEnabled";
-  
-  std::map<int, std::string> directories_part2; // key = number of genuine b-jets
-  directories_part2[2]                 = "sel/mem_2genuineBJets_";
-  directories_part2[1]                 = "sel/mem_1genuineBJet";
-  directories_part2[0]                 = "sel/mem_0genuineBJets_";
-  
-  std::map<int, std::string> directories_part2_missingBJet; // key = 1 (0) if b-jet is genuine (fake)
-  directories_part2_missingBJet[1]     = "sel/mem_missingBJet_genuineBJet";
-  directories_part2_missingBJet[0]     = "sel/mem_missingBJet_fakeBJet";
-
-  std::map<int, std::string> histogramNames; // key = { kProbSignal, kProbBackground, kLR }
-  histogramNames[kProbSignal]          = "log_memProb_signal";
-  histogramNames[kProbBackground]      = "log_memProb_background";
-  histogramNames[kLR]                  = "memLR";
 
   std::string labelText_signal = "HH #rightarrow b#bar{b} WW^{*} #rightarrow b#bar{b} l^{+}#nu l^{-}#bar{#nu}";
   std::string labelText_background = "t#bar{t} #rightarrow bW #bar{b}W #rightarrow b l^{+}#nu #bar{b} l^{-}#bar{#nu}";
@@ -1258,65 +1412,65 @@ void makeMEMPerformancePlots_bbww_dilepton()
   std::vector<std::string> showHistograms_signal_vs_background_drawOptions = { "ep", "ep" };
   std::vector<std::string> showHistograms_signal_vs_background_legendOptions = { "p", "p" };
 
-  std::map<std::string, std::string> xAxisTitle;               // key = getHistogramKey(idxHistogram)
-  std::map<std::string, std::string> xAxisTitle_missingBJet;   // key = getHistogramKey(idxHistogram)
-  std::map<std::string, std::string> xAxisTitle_missingWJet;   // key = getHistogramKey(idxHistogram)
-  std::map<std::string, std::string> xAxisTitle_missingBnWJet; // key = getHistogramKey(idxHistogram)
-  std::map<std::string, int>         numBinsX;                 // key = getHistogramKey(idxHistogram)
-  std::map<std::string, double>      xMin;                     // key = getHistogramKey(idxHistogram)
-  std::map<std::string, double>      xMax;
-  std::map<std::string, std::string> yAxisTitle;               // key = getHistogramKey(idxHistogram)
-  std::map<std::string, std::string> yAxisTitle_missingBJet;   // key = getHistogramKey(idxHistogram)
-  std::map<std::string, std::string> yAxisTitle_missingWJet;   // key = getHistogramKey(idxHistogram)
-  std::map<std::string, std::string> yAxisTitle_missingBnWJet; // key = getHistogramKey(idxHistogram)
-  std::map<std::string, double>      yMin;                     // key = getHistogramKey(idxHistogram)
-  std::map<std::string, double>      yMin_wRatio;              // key = getHistogramKey(idxHistogram)
-  std::map<std::string, double>      yMax;                     // key = getHistogramKey(idxHistogram)
+  std::map<int, std::string> xAxisTitle;               // key = idxHistogram
+  std::map<int, std::string> xAxisTitle_missingBJet;   // key = idxHistogram
+  std::map<int, std::string> xAxisTitle_missingWJet;   // key = idxHistogram
+  std::map<int, std::string> xAxisTitle_missingBnWJet; // key = idxHistogram
+  std::map<int, std::string> yAxisTitle;               // key = idxHistogram
+  std::map<int, std::string> yAxisTitle_missingBJet;   // key = idxHistogram
+  std::map<int, std::string> yAxisTitle_missingWJet;   // key = idxHistogram
+  std::map<int, std::string> yAxisTitle_missingBnWJet; // key = idxHistogram
+  std::map<int, double>      yMin;                     // key = idxHistogram
+  std::map<int, double>      yMin_wRatio;              // key = idxHistogram
+  std::map<int, double>      yMax;                     // key = idxHistogram
 
-  xAxisTitle["memLR"]               = "P";
-  xAxisTitle_missingBJet["memLR"]   = "P_{mB}";
-  xAxisTitle_missingWJet["memLR"]   = "P_{mW}";
-  xAxisTitle_missingBnWJet["memLR"] = "P_{mBW}";
-  numBinsX["memLR"]                 = 40;
-  xMin["memLR"]                     = 0.;
-  xMax["memLR"]                     = 1.;
-  yAxisTitle["memLR"]               = "dN/dP";
-  yAxisTitle_missingBJet["memLR"]   = "dN/dP_{mB}";
-  yAxisTitle_missingWJet["memLR"]   = "dN/dP_{mW}";
-  yAxisTitle_missingBnWJet["memLR"] = "dN/dP_{mBW}";
-  yMin["memLR"]                     = 1.1e-5;
-  yMin_wRatio["memLR"]              = 1.1e-5;
-  yMax["memLR"]                     = 1.9e0;
+  xAxisTitle[kLR]                  = "P";
+  xAxisTitle_missingBJet[kLR]      = "P_{mB}";
+  xAxisTitle_missingWJet[kLR]      = "P_{mW}";
+  xAxisTitle_missingBnWJet[kLR]    = "P_{mBW}";
+  yAxisTitle[kLR]                  = "dN/dP";
+  yAxisTitle_missingBJet[kLR]      = "dN/dP_{mB}";
+  yAxisTitle_missingWJet[kLR]      = "dN/dP_{mW}";
+  yAxisTitle_missingBnWJet[kLR]    = "dN/dP_{mBW}";
+  yMin[kLR]                        = 1.1e-5;
+  yMin_wRatio[kLR]                 = 1.1e-5;
+  yMax[kLR]                        = 1.9e0;
 
-  xAxisTitle["probS"]               = "log w_{0}";
-  xAxisTitle_missingBJet["probS"]   = "log w_{0}^{mB}";
-  xAxisTitle_missingWJet["probS"]   = "log w_{0}^{mW}";
-  xAxisTitle_missingBnWJet["probS"] = "log w_{0}^{mBW}";
-  numBinsX["probS"]                 = 40;
-  xMin["probS"]                     = -70.;
-  xMax["probS"]                     = +10.;
-  yAxisTitle["probS"]               = "dN/dlog w_{0}";
-  yAxisTitle_missingBJet["probS"]   = "dN/dlog w_{0}^{mB}";
-  yAxisTitle_missingWJet["probS"]   = "dN/dlog w_{0}^{mW}";
-  yAxisTitle_missingBnWJet["probS"] = "dN/dlog w_{0}^{mBW}";
-  yMin["probS"]                     = 1.1e-5;
-  yMin_wRatio["probS"]              = 1.1e-5;
-  yMax["probS"]                     = 1.9e0;
+  xAxisTitle[kProbS]               = "log w_{0}";
+  xAxisTitle_missingBJet[kProbS]   = "log w_{0}^{mB}";
+  xAxisTitle_missingWJet[kProbS]   = "log w_{0}^{mW}";
+  xAxisTitle_missingBnWJet[kProbS] = "log w_{0}^{mBW}";
+  yAxisTitle[kProbS]               = "dN/dlog w_{0}";
+  yAxisTitle_missingBJet[kProbS]   = "dN/dlog w_{0}^{mB}";
+  yAxisTitle_missingWJet[kProbS]   = "dN/dlog w_{0}^{mW}";
+  yAxisTitle_missingBnWJet[kProbS] = "dN/dlog w_{0}^{mBW}";
+  yMin[kProbS]                     = 1.1e-5;
+  yMin_wRatio[kProbS]              = 1.1e-5;
+  yMax[kProbS]                     = 1.9e0;
 
-  xAxisTitle["probB"]               = "log w_{1}";
-  xAxisTitle_missingBJet["probB"]   = "log w_{1}^{mB}";
-  xAxisTitle_missingWJet["probB"]   = "log w_{1}^{mW}";
-  xAxisTitle_missingBnWJet["probB"] = "log w_{1}^{mBW}";
-  numBinsX["probB"]                 = 40;
-  xMin["probB"]                     = -70.;
-  xMax["probB"]                     = +10.;
-  yAxisTitle["probB"]               = "dN/dlog w_{1}";
-  yAxisTitle_missingBJet["probB"]   = "dN/dlog w_{1}^{mB}";
-  yAxisTitle_missingWJet["probB"]   = "dN/dlog w_{1}^{mW}";
-  yAxisTitle_missingBnWJet["probB"] = "dN/dlog w_{1}^{mBW}";
-  yMin["probB"]                     = 3.1e-5;
-  yMin_wRatio["probB"]              = 3.1e-5;
-  yMax["probB"]                     = 1.9e0;
+  xAxisTitle[kProbB]               = "log w_{1}";
+  xAxisTitle_missingBJet[kProbB]   = "log w_{1}^{mB}";
+  xAxisTitle_missingWJet[kProbB]   = "log w_{1}^{mW}";
+  xAxisTitle_missingBnWJet[kProbB] = "log w_{1}^{mBW}";
+  yAxisTitle[kProbB]               = "dN/dlog w_{1}";
+  yAxisTitle_missingBJet[kProbB]   = "dN/dlog w_{1}^{mB}";
+  yAxisTitle_missingWJet[kProbB]   = "dN/dlog w_{1}^{mW}";
+  yAxisTitle_missingBnWJet[kProbB] = "dN/dlog w_{1}^{mBW}";
+  yMin[kProbB]                     = 3.1e-5;
+  yMin_wRatio[kProbB]              = 3.1e-5;
+  yMax[kProbB]                     = 1.9e0;
+
+  xAxisTitle[kMbb]                 = "m_{bb} [GeV]";
+  yAxisTitle[kMbb]                 = "dN/dm_{bb} [1/GeV]";
+  yMin[kMbb]                       = 3.1e-5;
+  yMin_wRatio[kMbb]                = 3.1e-5;
+  yMax[kMbb]                       = 1.9e0;
+
+  xAxisTitle[kMll]                 = "m_{ll} [GeV]";
+  yAxisTitle[kMll]                 = "dN/dm_{ll} [1/GeV]";
+  yMin[kMll]                       = 3.1e-5;
+  yMin_wRatio[kMll]                = 3.1e-5;
+  yMax[kMll]                       = 1.9e0;
 
   int showGraphs_canvasSizeX = 1050;
   int showGraphs_canvasSizeY =  950;
@@ -1334,14 +1488,11 @@ void makeMEMPerformancePlots_bbww_dilepton()
   std::vector<std::string> showGraphs_legendOptions = { "lp", "lp", "lp", "lp" };
 
   if ( makePlots_signal_vs_background ) {
-    for ( int idxHistogram = kProbSignal; idxHistogram <= kLR; ++idxHistogram ) {
-      const std::string& histogramName = histogramNames[idxHistogram];
-      std::string histogramKey = getHistogramKey(idxHistogram);
+    for ( int idxHistogram = kProbS; idxHistogram <= kMll; ++idxHistogram ) {
+      std::string histogramName = getHistogramName(idxHistogram);
 
-      TH1* histogram_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2[2], kSignal_lo, histogramName);
-      TH1* histogram_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2[2], kBackground_lo, histogramName);
+      TH1* histogram_noSmearing_2genuineBJets_signal     = histograms[kDisabled][kDisabled][2][kSignal_lo][idxHistogram];
+      TH1* histogram_noSmearing_2genuineBJets_background = histograms[kDisabled][kDisabled][2][kBackground_lo][idxHistogram];
 
       showHistograms(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY,
@@ -1354,9 +1505,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
         0.055, 0.23, 0.78, 0.33, 0.15, showHistograms_signal_vs_background_legendOptions,
         "", 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
-        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset,
-        true, yMin[histogramKey], yMax[histogramKey], yAxisTitle[histogramKey], showHistograms_yAxisOffset, 
-        Form("hh_bbwwMEM_dilepton_signal_vs_background_%s_unsmeared.pdf", histogramKey.data()));
+        xAxisTitle[idxHistogram], showHistograms_xAxisOffset,
+        true, yMin[idxHistogram], yMax[idxHistogram], yAxisTitle[idxHistogram], showHistograms_yAxisOffset, 
+        Form("hh_bbwwMEM_dilepton_signal_vs_background_%s_unsmeared.pdf", histogramName.data()));
 
       if ( idxHistogram == kLR ) {
         TGraph* graph_ROC_noSmearing_2genuineBJets_logScale = compGraphROC(
@@ -1383,31 +1534,24 @@ void makeMEMPerformancePlots_bbww_dilepton()
   }
 
   if ( makePlots_effectOfFakes ) {
-    for ( int idxHistogram = kProbSignal; idxHistogram <= kLR; ++idxHistogram ) {
-      const std::string& histogramName = histogramNames[idxHistogram];
-      std::string histogramKey = getHistogramKey(idxHistogram);
+    for ( int idxHistogram = kProbS; idxHistogram <= kMbb; ++idxHistogram ) {
+      std::string histogramName = getHistogramName(idxHistogram);
 
-      TH1* histogram_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2[2], kSignal_lo, histogramName);
-      TH1* histogram_noSmearing_1genuineBJet_signal = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2[1], kSignal_lo, histogramName);
-      TH1* histogram_noSmearing_0genuineBJets_signal = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2[0], kSignal_lo, histogramName);
+      TH1* histogram_noSmearing_2genuineBJets_signal     = histograms[kDisabled][kDisabled][2][kSignal_lo][idxHistogram];
+      TH1* histogram_noSmearing_1genuineBJet_signal      = histograms[kDisabled][kDisabled][1][kSignal_lo][idxHistogram];
+      TH1* histogram_noSmearing_0genuineBJets_signal     = histograms[kDisabled][kDisabled][0][kSignal_lo][idxHistogram];
   
       TH1* histogram_noSmearing_geq1fakeBJet_signal = addHistograms(
-        Form("histogram_%s_noSmearing_geq1fakeBJet_signal", histogramKey.data()),
+        Form("histogram_%s_noSmearing_geq1fakeBJet_signal", histogramName.data()),
         histogram_noSmearing_1genuineBJet_signal, 
         histogram_noSmearing_0genuineBJets_signal);
 
-      TH1* histogram_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2[2], kBackground_lo, histogramName);
-      TH1* histogram_noSmearing_1genuineBJet_background = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2[1], kBackground_lo, histogramName);
-      TH1* histogram_noSmearing_0genuineBJets_background = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2[0], kBackground_lo, histogramName);
+      TH1* histogram_noSmearing_2genuineBJets_background = histograms[kDisabled][kDisabled][2][kBackground_lo][idxHistogram];
+      TH1* histogram_noSmearing_1genuineBJet_background  = histograms[kDisabled][kDisabled][1][kBackground_lo][idxHistogram];
+      TH1* histogram_noSmearing_0genuineBJets_background = histograms[kDisabled][kDisabled][0][kBackground_lo][idxHistogram];
   
       TH1* histogram_noSmearing_geq1fakeBJet_background = addHistograms(
-        Form("histogram_%s_noSmearing_geq1fakeBJet_background", histogramKey.data()),
+        Form("histogram_%s_noSmearing_geq1fakeBJet_background", histogramName.data()),
         histogram_noSmearing_1genuineBJet_background, 
         histogram_noSmearing_0genuineBJets_background);
 
@@ -1422,9 +1566,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
         0.055, 0.23, 0.77, 0.33, 0.15, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
-        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset,
-        true, yMin[histogramKey], yMax[histogramKey], yAxisTitle[histogramKey], showHistograms_yAxisOffset, 
-        Form("hh_bbwwMEM_dilepton_effectOfFakes_2histograms_%s_signal.pdf", histogramKey.data()));
+        xAxisTitle[idxHistogram], showHistograms_xAxisOffset,
+        true, yMin[idxHistogram], yMax[idxHistogram], yAxisTitle[idxHistogram], showHistograms_yAxisOffset, 
+        Form("hh_bbwwMEM_dilepton_effectOfFakes_2histograms_%s_signal.pdf", histogramName.data()));
       showHistograms(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY,
         histogram_noSmearing_2genuineBJets_signal, "2 genuine b-jets",
@@ -1436,10 +1580,11 @@ void makeMEMPerformancePlots_bbww_dilepton()
         0.045, 0.23, 0.66, 0.33, 0.28, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
-        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset,
-        true, yMin[histogramKey], yMax[histogramKey], yAxisTitle[histogramKey], showHistograms_yAxisOffset, 
-        Form("hh_bbwwMEM_dilepton_effectOfFakes_3histograms_%s_signal.pdf", histogramKey.data()));showHistograms(
-      showHistograms_canvasSizeX, showHistograms_canvasSizeY,
+        xAxisTitle[idxHistogram], showHistograms_xAxisOffset,
+        true, yMin[idxHistogram], yMax[idxHistogram], yAxisTitle[idxHistogram], showHistograms_yAxisOffset, 
+        Form("hh_bbwwMEM_dilepton_effectOfFakes_3histograms_%s_signal.pdf", histogramName.data()));
+      showHistograms(
+        showHistograms_canvasSizeX, showHistograms_canvasSizeY,
         histogram_noSmearing_2genuineBJets_background, "2 genuine b-jets",
         histogram_noSmearing_geq1fakeBJet_background, "#geq 1 fake b-jet",
         nullptr, "",
@@ -1449,9 +1594,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
         0.055, 0.23, 0.77, 0.33, 0.15, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
-        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset,
-        true, yMin[histogramKey], yMax[histogramKey], yAxisTitle[histogramKey], showHistograms_yAxisOffset, 
-        Form("hh_bbwwMEM_dilepton_effectOfFakes_2histograms_%s_background.pdf", histogramKey.data()));
+        xAxisTitle[idxHistogram], showHistograms_xAxisOffset,
+        true, yMin[idxHistogram], yMax[idxHistogram], yAxisTitle[idxHistogram], showHistograms_yAxisOffset, 
+        Form("hh_bbwwMEM_dilepton_effectOfFakes_2histograms_%s_background.pdf", histogramName.data()));
       showHistograms(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY,
         histogram_noSmearing_2genuineBJets_background, "2 genuine b-jets",
@@ -1463,19 +1608,15 @@ void makeMEMPerformancePlots_bbww_dilepton()
         0.045, 0.23, 0.66, 0.33, 0.28, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
-        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset,
-        true, yMin[histogramKey], yMax[histogramKey], yAxisTitle[histogramKey], showHistograms_yAxisOffset, 
-        Form("hh_bbwwMEM_dilepton_effectOfFakes_3histograms_%s_background.pdf", histogramKey.data()));
+        xAxisTitle[idxHistogram], showHistograms_xAxisOffset,
+        true, yMin[idxHistogram], yMax[idxHistogram], yAxisTitle[idxHistogram], showHistograms_yAxisOffset, 
+        Form("hh_bbwwMEM_dilepton_effectOfFakes_3histograms_%s_background.pdf", histogramName.data()));
 
-      TH1* histogram_missingBJet_noSmearing_genuineBJet_signal = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2_missingBJet[1], kSignal_lo, histogramName);
-      TH1* histogram_missingBJet_noSmearing_fakeBJet_signal = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2_missingBJet[0], kSignal_lo, histogramName);
+      TH1* histogram_missingBJet_noSmearing_genuineBJet_signal     = histograms_missingBJet[kDisabled][kDisabled][1][kSignal_lo][idxHistogram];
+      TH1* histogram_missingBJet_noSmearing_fakeBJet_signal        = histograms_missingBJet[kDisabled][kDisabled][0][kSignal_lo][idxHistogram];
 
-      TH1* histogram_missingBJet_noSmearing_genuineBJet_background = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2_missingBJet[1], kBackground_lo, histogramName);
-      TH1* histogram_missingBJet_noSmearing_fakeBJet_background = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2_missingBJet[0], kBackground_lo, histogramName);
+      TH1* histogram_missingBJet_noSmearing_genuineBJet_background = histograms_missingBJet[kDisabled][kDisabled][1][kBackground_lo][idxHistogram];
+      TH1* histogram_missingBJet_noSmearing_fakeBJet_background    = histograms_missingBJet[kDisabled][kDisabled][0][kBackground_lo][idxHistogram];
 
       showHistograms(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY,
@@ -1488,9 +1629,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
         0.055, 0.23, 0.77, 0.33, 0.15, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
-        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset,
-        true, yMin[histogramKey], yMax[histogramKey], yAxisTitle[histogramKey], showHistograms_yAxisOffset,
-        Form("hh_bbwwMEM_dilepton_effectOfFakes_%s_missingBJet_signal.pdf", histogramKey.data()));
+        xAxisTitle[idxHistogram], showHistograms_xAxisOffset,
+        true, yMin[idxHistogram], yMax[idxHistogram], yAxisTitle[idxHistogram], showHistograms_yAxisOffset,
+        Form("hh_bbwwMEM_dilepton_effectOfFakes_%s_missingBJet_signal.pdf", histogramName.data()));
       showHistograms(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY,
         histogram_missingBJet_noSmearing_genuineBJet_background, "genuine b-jet",
@@ -1502,9 +1643,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
         0.055, 0.23, 0.77, 0.33, 0.15, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
-        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset,
-        true, yMin[histogramKey], yMax[histogramKey], yAxisTitle[histogramKey], showHistograms_yAxisOffset,
-        Form("hh_bbwwMEM_dilepton_effectOfFakes_%s_missingBJet_background.pdf", histogramKey.data()));
+        xAxisTitle[idxHistogram], showHistograms_xAxisOffset,
+        true, yMin[idxHistogram], yMax[idxHistogram], yAxisTitle[idxHistogram], showHistograms_yAxisOffset,
+        Form("hh_bbwwMEM_dilepton_effectOfFakes_%s_missingBJet_background.pdf", histogramName.data()));
 
       showHistograms(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY,
@@ -1517,9 +1658,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
         0.055, 0.23, 0.78, 0.33, 0.15, showHistograms_signal_vs_background_legendOptions,
         "", 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
-        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset,
-        true, yMin[histogramKey], yMax[histogramKey], yAxisTitle[histogramKey], showHistograms_yAxisOffset, 
-        Form("hh_bbwwMEM_dilepton_effectOfFakes_%s_missingBJet.pdf", histogramKey.data()));
+        xAxisTitle[idxHistogram], showHistograms_xAxisOffset,
+        true, yMin[idxHistogram], yMax[idxHistogram], yAxisTitle[idxHistogram], showHistograms_yAxisOffset, 
+        Form("hh_bbwwMEM_dilepton_effectOfFakes_%s_missingBJet.pdf", histogramName.data()));
 
       if ( idxHistogram == kLR ) {
         TGraph* graph_ROC_noSmearing_2genuineBJets_logScale = compGraphROC(
@@ -1599,27 +1740,18 @@ void makeMEMPerformancePlots_bbww_dilepton()
   }
 
   if ( makePlots_effectOfSmearing ) {
-    for ( int idxHistogram = kProbSignal; idxHistogram <= kLR; ++idxHistogram ) {
-      const std::string& histogramName = histogramNames[idxHistogram];
-      std::string histogramKey = getHistogramKey(idxHistogram);
+    for ( int idxHistogram = kProbS; idxHistogram <= kMbb; ++idxHistogram ) {
+      std::string histogramName = getHistogramName(idxHistogram);
 
-      TH1* histogram_noSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2[2], kSignal_lo, histogramName);
-      TH1* histogram_jetSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-        directories_part1[true][false], directories_part2[2], kSignal_lo, histogramName);
-      TH1* histogram_metSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-        directories_part1[false][true], directories_part2[2], kSignal_lo, histogramName);
-      TH1* histogram_jet_and_metSmearing_2genuineBJets_signal = loadHistogram(inputFile, 
-        directories_part1[true][true], directories_part2[2], kSignal_lo, histogramName);
+      TH1* histogram_noSmearing_2genuineBJets_signal              = histograms[kDisabled][kDisabled][2][kSignal_lo][idxHistogram];
+      TH1* histogram_jetSmearing_2genuineBJets_signal             = histograms[kEnabled][kDisabled][2][kSignal_lo][idxHistogram];
+      TH1* histogram_metSmearing_2genuineBJets_signal             = histograms[kDisabled][kEnabled][2][kSignal_lo][idxHistogram];
+      TH1* histogram_jet_and_metSmearing_2genuineBJets_signal     = histograms[kEnabled][kEnabled][2][kSignal_lo][idxHistogram];
 
-      TH1* histogram_noSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2[2], kBackground_lo, histogramName);
-      TH1* histogram_jetSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-        directories_part1[true][false], directories_part2[2], kBackground_lo, histogramName);
-      TH1* histogram_metSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-        directories_part1[false][true], directories_part2[2], kBackground_lo, histogramName);
-      TH1* histogram_jet_and_metSmearing_2genuineBJets_background = loadHistogram(inputFile, 
-        directories_part1[true][true], directories_part2[2], kBackground_lo, histogramName);
+      TH1* histogram_noSmearing_2genuineBJets_background          = histograms[kDisabled][kDisabled][2][kBackground_lo][idxHistogram];
+      TH1* histogram_jetSmearing_2genuineBJets_background         = histograms[kEnabled][kDisabled][2][kBackground_lo][idxHistogram];
+      TH1* histogram_metSmearing_2genuineBJets_background         = histograms[kDisabled][kEnabled][2][kBackground_lo][idxHistogram];
+      TH1* histogram_jet_and_metSmearing_2genuineBJets_background = histograms[kEnabled][kEnabled][2][kBackground_lo][idxHistogram];
   
       showHistograms_wRatio(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
@@ -1634,9 +1766,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
         0.065, 0.23, 0.64, 0.52, 0.26, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
-        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset_wRatio,
-        true, yMin_wRatio[histogramKey], yMax[histogramKey], 1. - 0.59, 1. + 0.59, yAxisTitle[histogramKey], showHistograms_yAxisOffset_wRatio,
-        Form("hh_bbwwMEM_dilepton_effectOfSmearing_%s_signal.pdf", histogramKey.data()));
+        xAxisTitle[idxHistogram], showHistograms_xAxisOffset_wRatio,
+        true, yMin_wRatio[idxHistogram], yMax[idxHistogram], 1. - 0.59, 1. + 0.59, yAxisTitle[idxHistogram], showHistograms_yAxisOffset_wRatio,
+        Form("hh_bbwwMEM_dilepton_effectOfSmearing_%s_signal.pdf", histogramName.data()));
       showHistograms_wRatio(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
         histogram_noSmearing_2genuineBJets_background, "MC truth",
@@ -1650,28 +1782,20 @@ void makeMEMPerformancePlots_bbww_dilepton()
         0.065, 0.23, 0.64, 0.52, 0.26, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
-        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset_wRatio,
-        true, yMin_wRatio[histogramKey], yMax[histogramKey], 1. - 0.59, 1. + 0.59, yAxisTitle[histogramKey], showHistograms_yAxisOffset_wRatio,
-        Form("hh_bbwwMEM_dilepton_effectOfSmearing_%s_background.pdf", histogramKey.data()));
+        xAxisTitle[idxHistogram], showHistograms_xAxisOffset_wRatio,
+        true, yMin_wRatio[idxHistogram], yMax[idxHistogram], 1. - 0.59, 1. + 0.59, yAxisTitle[idxHistogram], showHistograms_yAxisOffset_wRatio,
+        Form("hh_bbwwMEM_dilepton_effectOfSmearing_%s_background.pdf", histogramName.data()));
 
-      TH1* histogram_missingBJet_noSmearing_genuineBJet_signal = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2_missingBJet[1], kSignal_lo, histogramName);
-      TH1* histogram_missingBJet_jetSmearing_genuineBJet_signal = loadHistogram(inputFile, 
-        directories_part1[true][false], directories_part2_missingBJet[1], kSignal_lo, histogramName);
-      TH1* histogram_missingBJet_metSmearing_genuineBJet_signal = loadHistogram(inputFile, 
-        directories_part1[false][true], directories_part2_missingBJet[1], kSignal_lo, histogramName);
-      TH1* histogram_missingBJet_jet_and_metSmearing_genuineBJet_signal = loadHistogram(inputFile, 
-        directories_part1[true][true], directories_part2_missingBJet[1], kSignal_lo, histogramName);
+      TH1* histogram_missingBJet_noSmearing_genuineBJet_signal              = histograms_missingBJet[kDisabled][kDisabled][1][kSignal_lo][idxHistogram];
+      TH1* histogram_missingBJet_jetSmearing_genuineBJet_signal             = histograms_missingBJet[kEnabled][kDisabled][1][kSignal_lo][idxHistogram];
+      TH1* histogram_missingBJet_metSmearing_genuineBJet_signal             = histograms_missingBJet[kDisabled][kEnabled][1][kSignal_lo][idxHistogram];
+      TH1* histogram_missingBJet_jet_and_metSmearing_genuineBJet_signal     = histograms_missingBJet[kEnabled][kEnabled][1][kSignal_lo][idxHistogram];
 
-      TH1* histogram_missingBJet_noSmearing_genuineBJet_background = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2_missingBJet[1], kBackground_lo, histogramName);
-      TH1* histogram_missingBJet_jetSmearing_genuineBJet_background = loadHistogram(inputFile, 
-        directories_part1[true][false], directories_part2_missingBJet[1], kBackground_lo, histogramName);
-      TH1* histogram_missingBJet_metSmearing_genuineBJet_background = loadHistogram(inputFile, 
-        directories_part1[false][true], directories_part2_missingBJet[1], kBackground_lo, histogramName);
-      TH1* histogram_missingBJet_jet_and_metSmearing_genuineBJet_background = loadHistogram(inputFile, 
-        directories_part1[true][true], directories_part2_missingBJet[1], kBackground_lo, histogramName);
-    
+      TH1* histogram_missingBJet_noSmearing_genuineBJet_background          = histograms_missingBJet[kDisabled][kDisabled][1][kBackground_lo][idxHistogram];
+      TH1* histogram_missingBJet_jetSmearing_genuineBJet_background         = histograms_missingBJet[kEnabled][kDisabled][1][kBackground_lo][idxHistogram];
+      TH1* histogram_missingBJet_metSmearing_genuineBJet_background         = histograms_missingBJet[kDisabled][kEnabled][1][kBackground_lo][idxHistogram];
+      TH1* histogram_missingBJet_jet_and_metSmearing_genuineBJet_background = histograms_missingBJet[kEnabled][kEnabled][1][kBackground_lo][idxHistogram];
+ 
       showHistograms_wRatio(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
         histogram_missingBJet_noSmearing_genuineBJet_signal, "MC truth",
@@ -1685,9 +1809,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
         0.065, 0.23, 0.64, 0.52, 0.26, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
-        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset_wRatio,
-        true, yMin_wRatio[histogramKey], yMax[histogramKey], 1. - 0.59, 1. + 0.59, yAxisTitle[histogramKey], showHistograms_yAxisOffset_wRatio,
-        Form("hh_bbwwMEM_dilepton_effectOfSmearing_%s_missingBJet_signal.pdf", histogramKey.data()));
+        xAxisTitle[idxHistogram], showHistograms_xAxisOffset_wRatio,
+        true, yMin_wRatio[idxHistogram], yMax[idxHistogram], 1. - 0.59, 1. + 0.59, yAxisTitle[idxHistogram], showHistograms_yAxisOffset_wRatio,
+        Form("hh_bbwwMEM_dilepton_effectOfSmearing_%s_missingBJet_signal.pdf", histogramName.data()));
       showHistograms_wRatio(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
         histogram_missingBJet_noSmearing_genuineBJet_background, "MC truth",
@@ -1701,9 +1825,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
         0.065, 0.23, 0.64, 0.52, 0.26, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
-        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset_wRatio,
-        true, yMin_wRatio[histogramKey], yMax[histogramKey], 1. - 0.59, 1. + 0.59, yAxisTitle[histogramKey], showHistograms_yAxisOffset_wRatio,
-        Form("hh_bbwwMEM_dilepton_effectOfSmearing_%s_missingBJet_background.pdf", histogramKey.data()));
+        xAxisTitle[idxHistogram], showHistograms_xAxisOffset_wRatio,
+        true, yMin_wRatio[idxHistogram], yMax[idxHistogram], 1. - 0.59, 1. + 0.59, yAxisTitle[idxHistogram], showHistograms_yAxisOffset_wRatio,
+        Form("hh_bbwwMEM_dilepton_effectOfSmearing_%s_missingBJet_background.pdf", histogramName.data()));
 
       if ( idxHistogram == kLR ) {
         TGraph* graph_ROC_noSmearing_2genuineBJets_logScale = compGraphROC(
@@ -1778,19 +1902,14 @@ void makeMEMPerformancePlots_bbww_dilepton()
   }
 
   if ( makePlots_effectOfHigherOrders ) {
-    for ( int idxHistogram = kProbSignal; idxHistogram <= kLR; ++idxHistogram ) {
-      const std::string& histogramName = histogramNames[idxHistogram];
-      std::string histogramKey = getHistogramKey(idxHistogram);
+    for ( int idxHistogram = kProbS; idxHistogram <= kMll; ++idxHistogram ) {
+      std::string histogramName = getHistogramName(idxHistogram);
 
-      TH1* histogram_lo_signal = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2[2], kSignal_lo, histogramName);
-      TH1* histogram_nlo_signal = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2[2], kSignal_nlo, histogramName);
+      TH1* histogram_lo_signal      = histograms[kDisabled][kDisabled][2][kSignal_lo][idxHistogram];
+      TH1* histogram_nlo_signal     = histograms[kDisabled][kDisabled][2][kSignal_nlo][idxHistogram];
 
-      TH1* histogram_lo_background = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2[2], kBackground_lo, histogramName);
-      TH1* histogram_nlo_background = loadHistogram(inputFile, 
-        directories_part1[false][false], directories_part2[2], kBackground_nlo, histogramName);
+      TH1* histogram_lo_background  = histograms[kDisabled][kDisabled][2][kBackground_lo][idxHistogram];
+      TH1* histogram_nlo_background = histograms[kDisabled][kDisabled][2][kBackground_nlo][idxHistogram];
 
       showHistograms_wRatio(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
@@ -1803,9 +1922,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
         0.060, 0.26, 0.72, 0.27, 0.18, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
-        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset_wRatio,
-        true, yMin_wRatio[histogramKey], yMax[histogramKey], 1. - 0.29, 1. + 0.29, yAxisTitle[histogramKey], showHistograms_yAxisOffset_wRatio,
-        Form("hh_bbwwMEM_dilepton_lo_vs_nlo_%s_signal.pdf", histogramKey.data()));
+        xAxisTitle[idxHistogram], showHistograms_xAxisOffset_wRatio,
+        true, yMin_wRatio[idxHistogram], yMax[idxHistogram], 1. - 0.29, 1. + 0.29, yAxisTitle[idxHistogram], showHistograms_yAxisOffset_wRatio,
+        Form("hh_bbwwMEM_dilepton_lo_vs_nlo_%s_signal.pdf", histogramName.data()));
       showHistograms_wRatio(
         showHistograms_canvasSizeX, showHistograms_canvasSizeY_wRatio,
         histogram_lo_background, "LO",
@@ -1817,9 +1936,9 @@ void makeMEMPerformancePlots_bbww_dilepton()
         0.060, 0.26, 0.72, 0.27, 0.18, showHistograms_legendOptions,
         labelText_signal, 0.055,
         0.1800, 0.9525, 0.2900, 0.0900,
-        numBinsX[histogramKey], xMin[histogramKey], xMax[histogramKey], xAxisTitle[histogramKey], showHistograms_xAxisOffset_wRatio,
-        true, yMin_wRatio[histogramKey], yMax[histogramKey], 1. - 0.29, 1. + 0.29, yAxisTitle[histogramKey], showHistograms_yAxisOffset_wRatio,
-        Form("hh_bbwwMEM_dilepton_lo_vs_nlo_%s_background.pdf", histogramKey.data()));
+        xAxisTitle[idxHistogram], showHistograms_xAxisOffset_wRatio,
+        true, yMin_wRatio[idxHistogram], yMax[idxHistogram], 1. - 0.29, 1. + 0.29, yAxisTitle[idxHistogram], showHistograms_yAxisOffset_wRatio,
+        Form("hh_bbwwMEM_dilepton_lo_vs_nlo_%s_background.pdf", histogramName.data()));
 
       if ( idxHistogram == kLR ) {
         TGraph* graph_ROC_lo_logScale = compGraphROC(
@@ -1862,6 +1981,4 @@ void makeMEMPerformancePlots_bbww_dilepton()
       }
     }
   }
-
-  delete inputFile;
 }
