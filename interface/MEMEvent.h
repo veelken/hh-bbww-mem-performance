@@ -9,28 +9,56 @@
 
 #include <TMatrixD.h> // TMatrixD
 
+class MEMEventInfo
+{
+ public:
+  MEMEventInfo(UInt_t run, UInt_t lumi, ULong64_t event, Float_t genWeight)
+    : run_(run)
+    , lumi_(lumi)
+    , event_(event)
+    , genWeight_(genWeight)
+  {}
+  ~MEMEventInfo()
+  {}
+
+  UInt_t    run()       const { return run_;       }
+  UInt_t    lumi()      const { return lumi_;      }
+  ULong64_t event()     const { return event_;     }
+  Float_t   genWeight() const { return genWeight_; }
+
+ private:
+  UInt_t    run_;       ///< run number
+  UInt_t    lumi_;      ///< luminosity
+  ULong64_t event_;     ///< event number
+  Float_t   genWeight_; ///< generator-level weight (only if MC)
+};
+
 class MEMEvent
 {
  public:
-  MEMEvent(const EventInfo & eventInfo, bool isSignal,
-           const mem::MeasuredParticle* measuredBJet1, const mem::MeasuredParticle* measuredBJet2, 
+  MEMEvent(const MEMEventInfo & eventInfo, bool isSignal,
+           const mem::MeasuredParticle* measuredBJet1, const mem::MeasuredParticle* measuredBJet2,
            double measuredMEtPx, double measuredMEtPy, const TMatrixD& measuredMEtCov);
   ~MEMEvent();
 
   void set_genBJet1(const GenJet* genBJet1);
   void set_genBJet2(const GenJet* genBJet2);
+  void set_numGenBJets(int numGenBJets);
 
   void set_isBoosted_Hbb(bool isBoosted_Hbb);
 
   void set_genMEtPx(double genMEtPx);
   void set_genMEtPy(double genMEtPy);
 
+  void set_numMeasuredBJets_loose(int numMeasuredBJets_loose);
+  void set_numMeasuredBJets_medium(int numMeasuredBJets_medium);
+
   void set_memResult(const MEMResultBase& memResult);
   void set_memCpuTime(double memCpuTime);
 
   void set_barcode(int barcode);
 
-  const EventInfo & eventInfo() const;
+  const MEMEventInfo & eventInfo() const;
   bool isSignal() const;
 
   const mem::MeasuredParticle* measuredBJet1() const;
@@ -40,6 +68,9 @@ class MEMEvent
   bool isBoosted_Hbb() const;
   int numMeasuredBJets() const;
   int numGenBJets() const;
+
+  int numMeasuredBJets_loose() const;
+  int numMeasuredBJets_medium() const;
 
   double measuredMEtPx() const;
   double genMEtPx() const;
@@ -56,7 +87,7 @@ class MEMEvent
   void countMeasuredBJets();
   void countGenBJets();
 
-  const EventInfo* eventInfo_;
+  MEMEventInfo eventInfo_;
   bool isSignal_;
 
   const mem::MeasuredParticle* measuredBJet1_;
@@ -66,6 +97,9 @@ class MEMEvent
   bool isBoosted_Hbb_;
   int numMeasuredBJets_;
   int numGenBJets_;
+
+  int numMeasuredBJets_loose_;
+  int numMeasuredBJets_medium_;
 
   double measuredMEtPx_;
   double genMEtPx_;

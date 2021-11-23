@@ -1,9 +1,9 @@
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMEvent.h"
 
-MEMEvent::MEMEvent(const EventInfo & eventInfo, bool isSignal,
+MEMEvent::MEMEvent(const MEMEventInfo & eventInfo, bool isSignal,
                    const mem::MeasuredParticle* measuredBJet1, const mem::MeasuredParticle* measuredBJet2, 
                    double measuredMEtPx, double measuredMEtPy, const TMatrixD& measuredMEtCov)
-    : eventInfo_(&eventInfo)
+    : eventInfo_(eventInfo)
     , isSignal_(isSignal)
     , measuredBJet1_(measuredBJet1)
     , genBJet1_(nullptr)
@@ -41,6 +41,14 @@ MEMEvent::set_genBJet2(const GenJet* genBJet2)
 }
 
 void 
+MEMEvent::set_numGenBJets(int numGenBJets)
+{
+  genBJet1_ = nullptr;
+  genBJet2_ = nullptr;
+  numGenBJets_ = numGenBJets;
+}
+
+void 
 MEMEvent::set_isBoosted_Hbb(bool isBoosted_Hbb)
 {
   isBoosted_Hbb_ = isBoosted_Hbb;
@@ -57,6 +65,19 @@ MEMEvent::set_genMEtPy(double genMEtPy)
 {
   genMEtPy_ = genMEtPy;
 }
+
+void
+MEMEvent::set_numMeasuredBJets_loose(int numMeasuredBJets_loose)
+{
+  numMeasuredBJets_loose_ = numMeasuredBJets_loose;
+}
+
+void
+MEMEvent::set_numMeasuredBJets_medium(int numMeasuredBJets_medium)
+{
+  numMeasuredBJets_medium_ = numMeasuredBJets_medium;
+}
+
 
 void 
 MEMEvent::set_memResult(const MEMResultBase& memResult)
@@ -76,10 +97,10 @@ MEMEvent::set_barcode(int barcode)
   barcode_ = barcode; 
 }
 
-const EventInfo &
+const MEMEventInfo &
 MEMEvent::eventInfo() const
 {
-  return *eventInfo_;
+  return eventInfo_;
 }
 
 bool 
@@ -130,6 +151,18 @@ MEMEvent::numGenBJets() const
   return numGenBJets_;
 }
   
+int
+MEMEvent::numMeasuredBJets_loose() const
+{
+  return numMeasuredBJets_loose_;
+}
+
+int
+MEMEvent::numMeasuredBJets_medium() const
+{
+  return numMeasuredBJets_medium_;
+}
+
 double 
 MEMEvent::measuredMEtPx() const
 {

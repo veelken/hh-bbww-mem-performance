@@ -693,7 +693,7 @@ int main(int argc, char* argv[])
     memMeasuredParticles.push_back(memMeasuredBJet_sublead);
     
     MEMEvent_dilepton memEvent(
-      eventInfo, isSignal, 
+      { eventInfo.run, eventInfo.lumi, eventInfo.event, eventInfo.genWeight }, isSignal, 
       &memMeasuredBJet_lead, &memMeasuredBJet_sublead, 
       &memMeasuredLepton_lead, &memMeasuredLepton_sublead,
       genMEt_smeared.px(), genMEt_smeared.py(), metCov);
@@ -717,7 +717,7 @@ int main(int argc, char* argv[])
     }
 
     MEMEvent_dilepton memEvent_missingBJet(
-      eventInfo, isSignal, 
+      { eventInfo.run, eventInfo.lumi, eventInfo.event, eventInfo.genWeight }, isSignal, 
       memMeasuredBJet_missingBJet, nullptr,
       &memMeasuredLepton_lead, &memMeasuredLepton_sublead,
       genMEt_smeared.px(), genMEt_smeared.py(), metCov);

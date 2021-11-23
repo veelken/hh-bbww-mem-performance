@@ -33,13 +33,16 @@ protected:
   std::string outputTreeName_;
   TTree* tree_;
 
-  Int_t run_;
-  Int_t ls_;
-  Long64_t event_;
+  UInt_t run_;
+  UInt_t ls_;
+  ULong64_t event_;
 
   Float_t genWeight_;
 
   Bool_t isSignal_;
+
+  Int_t nbjets_loose_;
+  Int_t nbjets_medium_;
 
   Double_t memProbS_;
   Double_t memProbSerr_;

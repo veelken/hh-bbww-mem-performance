@@ -1,6 +1,6 @@
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMEvent_dilepton.h"
 
-MEMEvent_dilepton::MEMEvent_dilepton(const EventInfo & eventInfo, bool isSignal,
+MEMEvent_dilepton::MEMEvent_dilepton(const MEMEventInfo & eventInfo, bool isSignal,
                                      const mem::MeasuredParticle* measuredBJet1, const mem::MeasuredParticle* measuredBJet2, 
                                      const mem::MeasuredParticle* measuredLepton1, const mem::MeasuredParticle* measuredLepton2, 
                                      double measuredMEtPx, double measuredMEtPy, const TMatrixD& measuredMEtCov)
@@ -24,6 +24,14 @@ void
 MEMEvent_dilepton::set_genLepton2(const GenLepton* genLepton2)
 {
   genLepton2_ = genLepton2;
+}
+
+void 
+MEMEvent_dilepton::set_numGenLeptons(int numGenLeptons)
+{
+  genLepton1_ = nullptr;
+  genLepton2_ = nullptr;
+  numGenLeptons_ = numGenLeptons;
 }
 
 const mem::MeasuredParticle* 

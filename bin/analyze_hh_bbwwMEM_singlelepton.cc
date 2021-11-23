@@ -846,7 +846,7 @@ int main(int argc, char* argv[])
     memMeasuredParticles.push_back(memMeasuredWJet_sublead);
     
     MEMEvent_singlelepton memEvent(
-      eventInfo, isSignal, 
+      { eventInfo.run, eventInfo.lumi, eventInfo.event, eventInfo.genWeight }, isSignal, 
       &memMeasuredBJet_lead, &memMeasuredBJet_sublead,
       &memMeasuredWJet_lead, &memMeasuredWJet_sublead,
       &memMeasuredLepton,
@@ -872,7 +872,7 @@ int main(int argc, char* argv[])
     memMeasuredParticles_missingBJet.push_back(memMeasuredWJet_sublead);
 
     MEMEvent_singlelepton memEvent_missingBJet(
-      eventInfo, isSignal, 
+      { eventInfo.run, eventInfo.lumi, eventInfo.event, eventInfo.genWeight }, isSignal, 
       memMeasuredBJet_missingBJet, nullptr,
       &memMeasuredWJet_lead, &memMeasuredWJet_sublead,
       &memMeasuredLepton,
@@ -898,7 +898,7 @@ int main(int argc, char* argv[])
     }
 
     MEMEvent_singlelepton memEvent_missingWJet(
-      eventInfo, isSignal, 
+      { eventInfo.run, eventInfo.lumi, eventInfo.event, eventInfo.genWeight }, isSignal, 
       &memMeasuredBJet_lead, &memMeasuredBJet_sublead,
       memMeasuredWJet_missingWJet, nullptr,
       &memMeasuredLepton,
@@ -935,7 +935,7 @@ int main(int argc, char* argv[])
     }
 
     MEMEvent_singlelepton memEvent_missingBnWJet(
-      eventInfo, isSignal, 
+      { eventInfo.run, eventInfo.lumi, eventInfo.event, eventInfo.genWeight }, isSignal, 
       memMeasuredBJet_missingBnWJet, nullptr,
       memMeasuredWJet_missingBnWJet, nullptr,
       &memMeasuredLepton,

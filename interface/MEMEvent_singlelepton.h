@@ -1,14 +1,14 @@
 #ifndef hhAnalysis_bbwwMEMPerformanceStudies_MEMEvent_dilepton_h
 #define hhAnalysis_bbwwMEMPerformanceStudies_MEMEvent_dilepton_h
 
-#include "tthAnalysis/HiggsToTauTau/interface/GenLepton.h" // GenLepton
+#include "tthAnalysis/HiggsToTauTau/interface/GenLepton.h"           // GenLepton
 
-#include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMEvent.h"
+#include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMEvent.h" // MEMEvent, MEMEventInfo
 
 class MEMEvent_singlelepton : public MEMEvent
 {
  public:
-  MEMEvent_singlelepton(const EventInfo & eventInfo, bool isSignal,
+  MEMEvent_singlelepton(const MEMEventInfo & eventInfo, bool isSignal,
                         const mem::MeasuredParticle* measuredBJet1, const mem::MeasuredParticle* measuredBJet2, 
                         const mem::MeasuredParticle* measuredWJet1, const mem::MeasuredParticle* measuredWJet2, 
                         const mem::MeasuredParticle* measuredLepton,
@@ -17,9 +17,11 @@ class MEMEvent_singlelepton : public MEMEvent
 
   void set_genWJet1(const GenJet* genWJet1);
   void set_genWJet2(const GenJet* genWJet2);
+  void set_numGenWJets(int numGenWJets);
   void set_isBoosted_Wjj(bool isBoosted_Wjj);
   
   void set_genLepton(const GenLepton* genLepton);
+  void set_numGenLeptons(int numGenLeptons);
 
   const mem::MeasuredParticle* measuredWJet1() const;
   const GenJet* genWJet1() const;

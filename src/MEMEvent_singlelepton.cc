@@ -1,6 +1,6 @@
 #include "hhAnalysis/bbwwMEMPerformanceStudies/interface/MEMEvent_singlelepton.h"
 
-MEMEvent_singlelepton::MEMEvent_singlelepton(const EventInfo & eventInfo, bool isSignal,
+MEMEvent_singlelepton::MEMEvent_singlelepton(const MEMEventInfo & eventInfo, bool isSignal,
                                              const mem::MeasuredParticle* measuredBJet1, const mem::MeasuredParticle* measuredBJet2, 
                                              const mem::MeasuredParticle* measuredWJet1, const mem::MeasuredParticle* measuredWJet2, 
                                              const mem::MeasuredParticle* measuredLepton,
@@ -34,6 +34,13 @@ MEMEvent_singlelepton::set_genWJet2(const GenJet* genWJet2)
   countGenWJets();
 }
 
+void MEMEvent_singlelepton::set_numGenWJets(int numGenWJets)
+{
+  genWJet1_ = nullptr;
+  genWJet2_ = nullptr;
+  numGenWJets_ = numGenWJets;
+}
+
 void 
 MEMEvent_singlelepton::set_isBoosted_Wjj(bool isBoosted_Wjj)
 {
@@ -44,6 +51,13 @@ void
 MEMEvent_singlelepton::set_genLepton(const GenLepton* genLepton)
 {
   genLepton_ = genLepton;
+}
+
+void 
+MEMEvent_singlelepton::set_numGenLeptons(int numGenLeptons)
+{
+  genLepton_ = nullptr;
+  numGenLeptons_ = numGenLeptons;
 }
 
 const mem::MeasuredParticle* 
