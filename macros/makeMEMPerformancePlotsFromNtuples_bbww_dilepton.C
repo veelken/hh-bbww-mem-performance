@@ -1303,7 +1303,8 @@ void makeMEMPerformancePlotsFromNtuples_bbww_dilepton()
   bool makePlots_effectOfSmearing = true;
   bool makePlots_effectOfHigherOrders = true;
 
-  std::string inputFilePath = "/hdfs/local/veelken/hhAnalysis/2016/2021Aug31v2/histograms/hh_bbwwMEM_dilepton/";
+  //std::string inputFilePath = "/hdfs/local/veelken/hhAnalysis/2016/2021Aug31v2/histograms/hh_bbwwMEM_dilepton/";
+  std::string inputFilePath = "/hdfs/local/veelken/hhAnalysis/2016/2021Nov02/histograms/hh_bbwwMEM_dilepton/";
   
   std::string directory = "ntuples";
   std::string treeName  = "mem";
@@ -1383,6 +1384,16 @@ void makeMEMPerformancePlotsFromNtuples_bbww_dilepton()
       }
     }
   }
+
+  TFile* outputFile_mbb = new TFile("histogramsForPaper.root", "RECREATE");
+  outputFile_mbb->cd();
+  TH1* histogram_2genuineBJets_signal_mbb_unsmeared = histograms[kDisabled][kDisabled][2][kSignal_lo][kMbb];
+  histogram_2genuineBJets_signal_mbb_unsmeared->SetName("signal_lo_mbb_unsmeared")
+  histogram_2genuineBJets_signal_mbb_unsmeared->Write();
+  TH1* histogram_2genuineBJets_signal_mbb_smeared = histograms[kEnabled][kDisabled][2][kSignal_lo][kMbb];
+  histogram_2genuineBJets_signal_mbb_smeared->SetName("signal_lo_mbb_smeared")
+  histogram_2genuineBJets_signal_mbb_smeared->Write();
+  delete outputFile_mbb;
 
   std::string labelText_signal = "HH #rightarrow b#bar{b} WW^{*} #rightarrow b#bar{b} l^{+}#nu l^{-}#bar{#nu}";
   std::string labelText_background = "t#bar{t} #rightarrow bW #bar{b}W #rightarrow b l^{+}#nu #bar{b} l^{-}#bar{#nu}";
