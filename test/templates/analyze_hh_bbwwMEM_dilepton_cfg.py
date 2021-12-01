@@ -37,7 +37,8 @@ process.analyze_hh_bbwwMEM_dilepton = cms.PSet(
     metSmearing_sigmaX = cms.double(25.),
     metSmearing_sigmaY = cms.double(25.),
 
-    genBJet_pFake = cms.double(0.10),
+    ##genBJet_pFake = cms.double(0.10),
+    genBJet_pFake = cms.double(0.05),
 
     apply_genWeight = cms.bool(True),
     hasLHE = cms.bool(True),
